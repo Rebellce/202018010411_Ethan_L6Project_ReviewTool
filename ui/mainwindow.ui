@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+
+  <widget class="QDockWidget" name="dockWidget">
+   <property name="allowedAreas">
+    <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
+   </property>
+   <widget class="QWidget" name="dockWidgetContents"/>
+  </widget>
+
+  <widget class="QToolBar" name="toolBar">
+   <property name="allowedAreas">
+    <set>Qt::TopToolBarArea|Qt::BottomToolBarArea</set>
+   </property>
+  </widget>
+
+  <menubar name="menubar">
+   <menu name="menuFile">
+    <addaction name="actionNew"/>
+    <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
+   </menu>
+   <menu name="menuEdit"/>
+   <menu name="menuView"/>
+   <menu name="menuHelp"/>
+  </menubar>
+
+  <toolbar name="mainToolBar" area="top" movable="true" floatable="true">
+   <addaction name="actionNew"/>
+   <addaction name="actionOpen"/>
+   <addaction name="actionSave"/>
+  </toolbar>
+
+  <action name="actionNew">
+   <property name="text">
+    <string>New</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="text">
+    <string>Open</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
