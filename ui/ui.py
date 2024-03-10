@@ -13,6 +13,7 @@ import numpy as np
 from ui.myQGraphicsView import myQGraphicsView as myQGraphicsView
 
 from modules.fileModule import openIMGFile, saveIMGFile
+from modules.imgModule import *
 
 
 # from lb.backend.edittool import *
@@ -130,7 +131,7 @@ class ImageCropper(QMainWindow):
         self.dentaY = self.editToolBarH.height()
         self.show()
 
-#   ====================  File Module Functions ====================
+    #   ====================  File Module Functions ====================
 
     def openfile(self):
         self.painting = False
@@ -139,6 +140,68 @@ class ImageCropper(QMainWindow):
     def savefile(self):
         self.painting = False
         saveIMGFile(self)
+
+    #   ====================  IMG Module Functions ====================
+    def zoomIn(self):
+        self.painting = False
+        zoomIn(self)
+
+    def zoomOut(self):
+        self.painting = False
+        zoomOut(self)
+
+    #
+    def actionZoom(self):
+        self.painting = False
+        actionZoom(self)
+
+    def resize(self):
+        pass
+        # self.painting = False
+        # resize(self)
+
+    def buttonClickToResize(self):
+        pass
+        # self.painting = False
+        # buttonClickToResize(self)
+
+    def crop(self):
+        pass
+        # self.painting = False
+        # crop(self)
+
+    def buttonClicked(self):
+        pass
+        # self.painting = False
+        # buttonClicked(self)
+
+    def flipH(self):
+        pass
+        # self.painting = False
+        # flipH(self)
+
+    def flipV(self):
+        pass
+        # self.painting = False
+        # flipV(self)
+
+    def rotate(self):
+        pass
+        # self.painting = False
+        # rotate(self)
+
+    def rotateImage(self, angle):
+        pass
+        # self.painting = False
+        # rotateImage(self, angle)
+
+    def rotateImage90(self):
+        pass
+        # rotateImage90(self)
+
+    def rotateImage_90(self):
+        pass
+        # rotateImage_90(self)
 
     def toolFilter(self):
         self.hboxTool = QVBoxLayout()
@@ -369,7 +432,7 @@ class ImageCropper(QMainWindow):
     def createToolBarV(self):
         self.buttonOpen = self._createToolBar('../icons/plus.png', self.openfile, "Ctrl+O")
         self.buttonSave = self._createToolBar('../icons/save.png', self.savefile, "Ctrl+S")
-        self.buttonZoomIn = self._createToolBar('../icons/zoom-in.png', self.zoomIn, "Ctrl++")
+        self.buttonZoomIn = self._createToolBar('../icons/zoom-in.png', self.zoomIn, "Ctrl+=")
         self.buttonZoomOut = self._createToolBar('../icons/zoom-out.png', self.zoomOut, "Ctrl+-")
         self.buttonCrop = self._createToolBar('../icons/crop.png', self.crop, "Ctrl+A")
         self.buttonFlipH = self._createToolBar('../icons/flipH.png', self.flipH, "Ctrl+A")
@@ -407,69 +470,6 @@ class ImageCropper(QMainWindow):
         window.setLayout(button)
         self.editToolBarV.addWidget(window)
         return toolButton
-
-    def zoomIn(self):
-        pass
-        # self.painting = False
-        # zoomIn(self)
-
-    def zoomOut(self):
-        pass
-        # self.painting = False
-        # zoomOut(self)
-
-    def actionZoom(self):
-        pass
-        # self.painting = False
-        # actionZoom(self)
-
-    def resize(self):
-        pass
-        # self.painting = False
-        # resize(self)
-
-    def buttonClickToResize(self):
-        pass
-        # self.painting = False
-        # buttonClickToResize(self)
-
-    def crop(self):
-        pass
-        # self.painting = False
-        # crop(self)
-
-    def buttonClicked(self):
-        pass
-        # self.painting = False
-        # buttonClicked(self)
-
-    def flipH(self):
-        pass
-        # self.painting = False
-        # flipH(self)
-
-    def flipV(self):
-        pass
-        # self.painting = False
-        # flipV(self)
-
-    def rotate(self):
-        pass
-        # self.painting = False
-        # rotate(self)
-
-    def rotateImage(self, angle):
-        pass
-        # self.painting = False
-        # rotateImage(self, angle)
-
-    def rotateImage90(self):
-        pass
-        # rotateImage90(self)
-
-    def rotateImage_90(self):
-        pass
-        # rotateImage_90(self)
 
     def text(self):
         pass
