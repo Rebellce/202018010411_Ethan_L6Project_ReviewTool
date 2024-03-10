@@ -4,7 +4,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 
-class customQGraphicsView(QGraphicsView):
+class myQGraphicsView(QGraphicsView):
     def __init__(self):
         super().__init__()
         self.is_cropping = False
@@ -68,7 +68,7 @@ class customQGraphicsView(QGraphicsView):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.view = customQGraphicsView() #self
+        self.view = myQGraphicsView() #self
         self.image = QImage("samoyed_puppy_dog_pictures.jpg")  
         self.scene = QGraphicsScene(self)
         self.pixmap = QPixmap.fromImage(self.image)       

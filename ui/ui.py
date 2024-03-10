@@ -10,7 +10,10 @@ import numpy as np
 # from lb.model.realesrgan.utils import RealESRGANer
 # from lb.model.realesrgan.srvggnet import SRVGGNetCompact
 # from lb.model.lama.saicinpainting.training.trainers import load_checkpoint
-from ui.customQGraphicsView import customQGraphicsView as customQGraphicsView
+from ui.myQGraphicsView import myQGraphicsView as myQGraphicsView
+from modules.fileModule import openfile
+
+
 # from lb.backend.edittool import *
 # from lb.backend.filter import *
 # from lb.backend.aitools import *
@@ -18,7 +21,7 @@ from ui.customQGraphicsView import customQGraphicsView as customQGraphicsView
 
 # device = torch.device(f'cuda' if torch.cuda.is_available() else 'cpu')
 # checkpoint_path = '/home/thaivv/ImageEditor/lb/model/lama/weight/model/best.ckpt'
-config = '/home/thaivv/ImageEditor/lb/model/lama/weight/config.yaml'
+# config = '/home/thaivv/ImageEditor/lb/model/lama/weight/config.yaml'
 
 # @hydra.main(config_path="/home/thaivv/ImageEditor/lb/model/lama/configs/prediction", config_name="default.yaml")
 # def main(predict_config: OmegaConf):
@@ -34,6 +37,8 @@ config = '/home/thaivv/ImageEditor/lb/model/lama/weight/config.yaml'
 class ImageCropper(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        #  init picture settings
         self.scale = 1
         self.image = None
         self.painting = False
@@ -44,11 +49,13 @@ class ImageCropper(QMainWindow):
         self.highlights = ()
         self.shadows = ()
         self.brightness = ()
+
+        #  init user interface
         self.initUI()
-        self.initModelAi()
+
+        #  init model
         self.toolFilter()
         self.toolEdit()
-        self.toolAI()
         self.createToolBarV()
         self.initPaint()
 
@@ -58,85 +65,84 @@ class ImageCropper(QMainWindow):
         self.brushColor = Qt.black
         self.lastPoint = QPoint()
 
-
-    def initModelAi(self):
-        print('init AI model')
-        pass
-    #     model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
-    #     netscale = 2
-    #     # wdn_model_path = '/home/thaivv/ImageEditor/lb/model/realesrgan/weight/RealESRGAN_x4plus.pth'
-    #     model_path = '/home/thaivv/ImageEditor/lb/model/realesrgan/weight/net_g_20000.pth'
-    #     dni_weight = None
-    #     tile = 0
-    #     tile_pad = 10
-    #     pre_pad = 0
-    #     half = False
-    #     gpu_id = 0
-    #     self.outscale = 2
-    #     self.upsampler = RealESRGANer(
-    #         scale=netscale,
-    #         model_path=model_path,
-    #         dni_weight=dni_weight,
-    #         model=model,
-    #         tile=tile,
-    #         tile_pad=tile_pad,
-    #         pre_pad=pre_pad,
-    #         half=half,
-    #         gpu_id=gpu_id)
-    #     self.modelLama = main(OmegaConf)
-
     def initUI(self):
-        self.setWindowTitle("Python Menus & Toolbars")
-        self.setGeometry(100, 100, 400, 300)
+        # set window size and position
+        screen = QDesktopWidget().screenGeometry()
+        self.width = screen.width() * 0.5
+        ratio = 3 / 4
+        self.height = self.width * ratio  # adjust the ratio
+        self.width = min(self.width, screen.width() / 2)
+        self.height = min(self.height, screen.height() * ratio)
+        self.left = (screen.width() - self.width) / 2
+        self.top = (screen.height() - self.height) / 2
+        self.setGeometry(int(self.left), int(self.top), int(self.width), int(self.height))
+
+        # overview of the window
+        self.setWindowTitle("Educational Assistant Tool")
         self.centralWidget = QWidget()
         self.setCentralWidget(self.centralWidget)
+
+        # create a scene and a view to display the image
         self.scene = QGraphicsScene()
-        self.view = customQGraphicsView()
+        self.view = myQGraphicsView()
         self.view.setScene(self.scene)
         self.transform = self.view.transform()
-        self.layout = QHBoxLayout()
-        self.splitter = QSplitter(Qt.Vertical)
+
+        # Create a horizontal layout and a horizontal splitter
+        self.layout = QHBoxLayout(self.centralWidget)
+        self.splitter = QSplitter(Qt.Horizontal)  # Use horizontal splitter
+
+        # Add the view to the splitter
         self.splitter.addWidget(self.view)
         self.view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.layout.addWidget(self.splitter, stretch = 4)
-        self.editToolBarV = QToolBar(self)
-        self.editToolBarH = QToolBar(self)
-        self.addToolBar(Qt.LeftToolBarArea,self.editToolBarV)
-        self.addToolBar(Qt.TopToolBarArea,self.editToolBarH)
-        self.editToolBarH.setFixedHeight(50)
+
+        # Create tabs for overview the image and filtering
         self.tabs = QTabWidget()
         self.tabEdit = QWidget()
         self.tabFilter = QWidget()
-        self.tabFilter.setFixedWidth(245)
-        self.tabAI = QWidget()
+        # No need to set fixed width for the tabFilter, it will be managed by splitter
+
         self.tabs.addTab(self.tabEdit, 'Edit Image')
         self.tabs.addTab(self.tabFilter, 'Filter')
-        self.tabs.addTab(self.tabAI, 'AI tool')
-        self.layout.addWidget(self.tabs, stretch = 1)
-        self.centralWidget.setLayout(self.layout)
+
+        # Add the tabs widget to the splitter
+        self.splitter.addWidget(self.tabs)
+
+        # Add the splitter to the main layout
+        self.layout.addWidget(self.splitter)
+
+        initialSizes = [self.width * 0.75, self.width * 0.25]
+        self.splitter.setSizes(initialSizes)
+
+        # The splitter handle allows resizing of the contained widgets
+        self.splitter.setCollapsible(0, False)  # Disable collapsing for the view
+        self.splitter.setCollapsible(1, False)  # Disable collapsing for the tab bar
+
+        # create two toolbars for editing
+        self.editToolBarV = QToolBar(self)
+        self.editToolBarH = QToolBar(self)
+        self.addToolBar(Qt.LeftToolBarArea, self.editToolBarV)
+        self.addToolBar(Qt.TopToolBarArea, self.editToolBarH)
+        self.editToolBarH.setFixedHeight(50)
+
         self.dentaX = self.editToolBarV.width()
         self.dentaY = self.editToolBarH.height()
-        # print(self.editToolBarH.height())
-        self.showMaximized()
+        self.show()
 
-    def toolAI(self):
-        self.hboxToolAI = QVBoxLayout()
-        self.resolution, _  = self.createtoolFilter('Super Resolution', self.superResolution, False)
-        self.inpainting, _ = self.createtoolFilter('Inpainting', self.inpainting, False)
-        self.hboxToolAI.addWidget(self.resolution)
-        self.hboxToolAI.addWidget(self.inpainting)
-        self.tabAI.setLayout(self.hboxToolAI)
+    def openfile(self):
+        self.painting = False
+        self.scene.clear()
+        openfile(self)
 
     def toolFilter(self):
         self.hboxTool = QVBoxLayout()
-        self.blur, self.blurBin  = self.createtoolFilter('Box blur', self.boxBlur, True)
+        self.blur, self.blurBin = self.createtoolFilter('Box blur', self.boxBlur, True)
         self.blur1, self.gaus = self.createtoolFilter('Gaussian blur', self.gaussianBlur, True)
         self.blur2, self.med = self.createtoolFilter('Median blur', self.medianBlur, True)
         self.hboxTool.addWidget(self.blur)
         self.hboxTool.addWidget(self.blur1)
         self.hboxTool.addWidget(self.blur2)
         self.tabFilter.setLayout(self.hboxTool)
-
 
     def createtoolFilter(self, name, log, flag):
         hboxTool = QHBoxLayout()
@@ -153,7 +159,6 @@ class ImageCropper(QMainWindow):
         widgetFilter.setLayout(hboxTool)
         return widgetFilter, spinBoxW
 
-
     def toolEdit(self):
         self.hbox = QVBoxLayout()
         self.labelT = QLabel("Temperature: 0")
@@ -169,10 +174,10 @@ class ImageCropper(QMainWindow):
         # Hightlights
         self.labelHightlights = QLabel("Hightlights: 0")
         self._tool(self.labelHightlights, self.onHightlightsChanged)
-        #Shadows
+        # Shadows
         self.labelShadows = QLabel("Shadows: 0")
         self._tool(self.labelShadows, self.onShadowsChanged)
-        #Brightness
+        # Brightness
         self.labelBrightness = QLabel("Brightness: 0")
         self._tool(self.labelBrightness, self.onBrightnessChanged)
         self.tabEdit.setLayout(self.hbox)
@@ -200,19 +205,19 @@ class ImageCropper(QMainWindow):
         self.pixmapBlack = QPixmap(self.pixmap.size())
         self.pixmapBlack.fill(Qt.black)
         self.editToolBarH.clear()
-        backColor = QAction(QIcon("icons/highlight.png"),"Change background color",self)
+        backColor = QAction(QIcon("icons/highlight.png"), "Change background color", self)
         backColor.triggered.connect(self.changeColor)
-        px_7 = QAction('7px',self)
+        px_7 = QAction('7px', self)
         px_7.triggered.connect(self.changeSize7px)
-        px_9 = QAction('9px',self)
+        px_9 = QAction('9px', self)
         px_9.triggered.connect(self.changeSize9px)
-        px_13 = QAction('13px',self)
+        px_13 = QAction('13px', self)
         px_13.triggered.connect(self.changeSize13px)
-        px_17 = QAction('17px',self)
+        px_17 = QAction('17px', self)
         px_17.triggered.connect(self.changeSize17px)
-        px_21 = QAction('21px',self)
+        px_21 = QAction('21px', self)
         px_21.triggered.connect(self.changeSize21px)
-        finish = QAction('OK',self)
+        finish = QAction('OK', self)
         finish.triggered.connect(self.lama)
         self.editToolBarH.addAction(backColor)
         self.editToolBarH.addAction(px_7)
@@ -241,10 +246,9 @@ class ImageCropper(QMainWindow):
     def changeSize21px(self):
         self.brushSize = 21
 
-
     def mousePressEvent(self, event):
         if self.painting and self.image is not None:
-        # if left mouse button is pressed
+            # if left mouse button is pressed
             if event.button() == Qt.LeftButton:
                 # make drawing flag true
                 self.drawing = True
@@ -261,18 +265,18 @@ class ImageCropper(QMainWindow):
 
                 # set the pen of the painter
                 painter.setPen(QPen(self.brushColor, self.brushSize,
-                                Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+                                    Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
                 painterBlack.setPen(QPen(Qt.white, self.brushSize,
-                                Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+                                         Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
 
                 # draw line from the last point of cursor to the current point
                 point1 = self.view.mapToScene(self.lastPoint)
                 point2 = self.view.mapToScene(event.pos())
-                point3 = QPointF(point1.x() - 1.5*self.dentaY , point1.y() - self.dentaX / 2)
-                point4 = QPointF(point2.x() - 1.5*self.dentaY, point2.y() - self.dentaX / 2)
-                painter.drawLine(point3 , point4)
-                painterBlack.drawLine(point3 , point4)
-                #self.view.mapToScene(event.pos())
+                point3 = QPointF(point1.x() - 1.5 * self.dentaY, point1.y() - self.dentaX / 2)
+                point4 = QPointF(point2.x() - 1.5 * self.dentaY, point2.y() - self.dentaX / 2)
+                painter.drawLine(point3, point4)
+                painterBlack.drawLine(point3, point4)
+                # self.view.mapToScene(event.pos())
 
                 # change the last point
                 self.lastPoint = event.pos()
@@ -287,7 +291,7 @@ class ImageCropper(QMainWindow):
 
     def paintEvent(self, event):
         if self.painting and self.image is not None:
-        # create a canvas
+            # create a canvas
             canvasPainter = QPainter()
             # draw rectangle  on the canvas
             canvasPainter.drawPixmap(self.rect(), self.pixmap, self.pixmap.rect())
@@ -360,15 +364,16 @@ class ImageCropper(QMainWindow):
         self.buttonOpen = self._createToolBar('../icons/plus.png', self.openfile, "Ctrl+O")
         self.buttonSave = self._createToolBar('../icons/save.png', self.save, "Ctrl+S")
         self.buttonZoomIn = self._createToolBar('../icons/zoom-in.png', self.zoomIn, "Ctrl++")
-        self.buttonZoomOut = self._createToolBar('../icons/zoom-out.png', self.zoomOut,"Ctrl+-")
+        self.buttonZoomOut = self._createToolBar('../icons/zoom-out.png', self.zoomOut, "Ctrl+-")
         self.buttonCrop = self._createToolBar('../icons/crop.png', self.crop, "Ctrl+A")
         self.buttonFlipH = self._createToolBar('../icons/flipH.png', self.flipH, "Ctrl+A")
         self.buttonFlipV = self._createToolBar('../icons/filpV.png', self.flipV, "Ctrl+A")
         self.buttonResize = self._createToolBar('../icons/resize.png', self.resize, "Ctrl+A")
-        self.buttonRotate = self._createToolBar('../icons/rotate.png', self.rotate , "Ctrl+A")
-        self.buttonText = self._createToolBar('../icons/text.png', self.text , "Ctrl+A")
-        self.listTool = [self.buttonOpen, self.buttonSave, self.buttonZoomIn, self.buttonZoomOut, self.buttonCrop, self.buttonFlipH, self.buttonFlipV, \
-             self.buttonResize,self.buttonRotate, self.buttonText ]
+        self.buttonRotate = self._createToolBar('../icons/rotate.png', self.rotate, "Ctrl+A")
+        self.buttonText = self._createToolBar('../icons/text.png', self.text, "Ctrl+A")
+        self.listTool = [self.buttonOpen, self.buttonSave, self.buttonZoomIn, self.buttonZoomOut, self.buttonCrop,
+                         self.buttonFlipH, self.buttonFlipV, \
+                         self.buttonResize, self.buttonRotate, self.buttonText]
         for bt in self.listTool:
             bt.clicked.connect(self.button_clicked)
 
@@ -396,12 +401,6 @@ class ImageCropper(QMainWindow):
         window.setLayout(button)
         self.editToolBarV.addWidget(window)
         return toolButton
-
-    def openfile(self):
-        pass
-        # self.painting = False
-        # self.scene.clear()
-        # openfile(self)
 
     def zoomIn(self):
         pass
@@ -497,6 +496,7 @@ class ImageCropper(QMainWindow):
         pass
         # bold(self)
         #
+
     def italic(self):
         pass
         # italic(self)
@@ -524,4 +524,3 @@ class ImageCropper(QMainWindow):
     def alignJustify(self):
         pass
         # alignJustify(self)
-
