@@ -11,7 +11,8 @@ import numpy as np
 # from lb.model.realesrgan.srvggnet import SRVGGNetCompact
 # from lb.model.lama.saicinpainting.training.trainers import load_checkpoint
 from ui.myQGraphicsView import myQGraphicsView as myQGraphicsView
-from modules.fileModule import openfile
+
+from modules.fileModule import openIMGFile, saveIMGFile
 
 
 # from lb.backend.edittool import *
@@ -129,10 +130,15 @@ class ImageCropper(QMainWindow):
         self.dentaY = self.editToolBarH.height()
         self.show()
 
+#   ====================  File Module Functions ====================
+
     def openfile(self):
         self.painting = False
-        openfile(self)
+        openIMGFile(self)
 
+    def savefile(self):
+        self.painting = False
+        saveIMGFile(self)
 
     def toolFilter(self):
         self.hboxTool = QVBoxLayout()
@@ -362,7 +368,7 @@ class ImageCropper(QMainWindow):
 
     def createToolBarV(self):
         self.buttonOpen = self._createToolBar('../icons/plus.png', self.openfile, "Ctrl+O")
-        self.buttonSave = self._createToolBar('../icons/save.png', self.save, "Ctrl+S")
+        self.buttonSave = self._createToolBar('../icons/save.png', self.savefile, "Ctrl+S")
         self.buttonZoomIn = self._createToolBar('../icons/zoom-in.png', self.zoomIn, "Ctrl++")
         self.buttonZoomOut = self._createToolBar('../icons/zoom-out.png', self.zoomOut, "Ctrl+-")
         self.buttonCrop = self._createToolBar('../icons/crop.png', self.crop, "Ctrl+A")
@@ -426,11 +432,6 @@ class ImageCropper(QMainWindow):
         pass
         # self.painting = False
         # buttonClickToResize(self)
-
-    def save(self):
-        pass
-        # self.painting = False
-        # save(self)
 
     def crop(self):
         pass
