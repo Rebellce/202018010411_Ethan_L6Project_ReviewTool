@@ -131,8 +131,8 @@ class ImageCropper(QMainWindow):
 
     def openfile(self):
         self.painting = False
-        self.scene.clear()
         openfile(self)
+
 
     def toolFilter(self):
         self.hboxTool = QVBoxLayout()
