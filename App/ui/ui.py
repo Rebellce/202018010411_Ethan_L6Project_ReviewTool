@@ -1,34 +1,8 @@
-# import torch
-# import hydra
-# from basicsr.archs.rrdbnet_arch import RRDBNet
-# from omegaconf import OmegaConf
-# from lb.model.realesrgan.utils import RealESRGANer
-# from lb.model.realesrgan.srvggnet import SRVGGNetCompact
-# from lb.model.lama.saicinpainting.training.trainers import load_checkpoint
 from App.ui.myQGraphicsView import myQGraphicsView as myQGraphicsView
 
 from App.modules.fileModule import openIMGFile, saveIMGFile
 from App.modules.imgModule import *
-
-
-# from lb.backend.edittool import *
-# from lb.backend.filter import *
-# from lb.backend.aitools import *
-# from lb.backend.general import *
-
-# device = torch.device(f'cuda' if torch.cuda.is_available() else 'cpu')
-# checkpoint_path = '/home/thaivv/ImageEditor/lb/model/lama/weight/model/best.ckpt'
-# config = '/home/thaivv/ImageEditor/lb/model/lama/weight/config.yaml'
-
-# @hydra.main(config_path="/home/thaivv/ImageEditor/lb/model/lama/configs/prediction", config_name="default.yaml")
-# def main(predict_config: OmegaConf):
-#     with open(config, 'r') as f:
-#         train_config = OmegaConf.create(yaml.safe_load(f))
-#     train_config.training_model.predict_only = True
-#     model = load_checkpoint(train_config, checkpoint_path, strict=False, map_location='cpu')
-#     model.eval()
-#     model.to(device)
-#     return model
+from App.modules.textModule import *
 
 
 class ImageCropper(QMainWindow):
@@ -193,6 +167,46 @@ class ImageCropper(QMainWindow):
     def undoRotation(self):
         undoRotation(self)
 
+    #   ====================  Text Module Functions ====================
+    def text(self):
+        self.painting = False
+        text(self)
+
+    def buttonClickToSetText(self):
+        buttonClickToSetText(self)
+
+    def buttonClickToSetTextPixmap(self):
+        buttonClickToSetTextPixmap(self)
+
+    def fontColorChanged(self):
+        fontColorChanged(self)
+
+    def highlight(self):
+        highlight(self)
+
+    def bold(self):
+        bold(self)
+
+    def italic(self):
+        italic(self)
+
+    def underline(self):
+        underline(self)
+
+    def strike(self):
+        strike(self)
+
+    def alignLeft(self):
+        alignLeft(self)
+
+    def alignRight(self):
+        alignRight(self)
+
+    def alignCenter(self):
+        alignCenter(self)
+
+    def alignJustify(self):
+        alignJustify(self)
 
     def toolFilter(self):
         self.hboxTool = QVBoxLayout()
@@ -265,7 +279,7 @@ class ImageCropper(QMainWindow):
         self.pixmapBlack = QPixmap(self.pixmap.size())
         self.pixmapBlack.fill(Qt.black)
         self.editToolBarH.clear()
-        backColor = QAction(QIcon("icons/highlight.png"), "Change background color", self)
+        backColor = QAction(QIcon("../icons/highlight.png"), "Change background color", self)
         backColor.triggered.connect(self.changeColor)
         px_7 = QAction('7px', self)
         px_7.triggered.connect(self.changeSize7px)
@@ -286,10 +300,6 @@ class ImageCropper(QMainWindow):
         self.editToolBarH.addAction(px_17)
         self.editToolBarH.addAction(px_21)
         self.editToolBarH.addAction(finish)
-
-    def lama(self):
-        pass
-        # lama(self, self.pixmap, self.pixmapBlack)
 
     def changeSize7px(self):
         self.brushSize = 7
@@ -461,58 +471,3 @@ class ImageCropper(QMainWindow):
         window.setLayout(button)
         self.editToolBarV.addWidget(window)
         return toolButton
-
-    def text(self):
-        pass
-        # self.painting = False
-        # text(self)
-
-    def buttonClickToSetText(self):
-        pass
-        # buttonClickToSetText(self)
-
-    def buttonClickToSetTextPixmap(self):
-        pass
-        # buttonClickToSetTextPixmap(self)
-
-    def fontColorChanged(self):
-        pass
-        # fontColorChanged(self)
-
-    def highlight(self):
-        pass
-
-    # highlight(self)
-
-    def bold(self):
-        pass
-        # bold(self)
-        #
-
-    def italic(self):
-        pass
-        # italic(self)
-
-    def underline(self):
-        pass
-        # underline(self)
-
-    def strike(self):
-        pass
-        # strike(self)
-
-    def alignLeft(self):
-        pass
-        # alignLeft(self)
-
-    def alignRight(self):
-        pass
-        # alignRight(self)
-
-    def alignCenter(self):
-        pass
-        # alignCenter(self)
-
-    def alignJustify(self):
-        pass
-        # alignJustify(self)
