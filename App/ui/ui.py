@@ -1,19 +1,14 @@
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-import yaml
 # import torch
-import numpy as np
 # import hydra
 # from basicsr.archs.rrdbnet_arch import RRDBNet
 # from omegaconf import OmegaConf
 # from lb.model.realesrgan.utils import RealESRGANer
 # from lb.model.realesrgan.srvggnet import SRVGGNetCompact
 # from lb.model.lama.saicinpainting.training.trainers import load_checkpoint
-from ui.myQGraphicsView import myQGraphicsView as myQGraphicsView
+from App.ui.myQGraphicsView import myQGraphicsView as myQGraphicsView
 
-from modules.fileModule import openIMGFile, saveIMGFile
-from modules.imgModule import *
+from App.modules.fileModule import openIMGFile, saveIMGFile
+from App.modules.imgModule import *
 
 
 # from lb.backend.edittool import *
@@ -155,53 +150,49 @@ class ImageCropper(QMainWindow):
         self.painting = False
         actionZoom(self)
 
+    def crop(self):
+        self.painting = False
+        crop(self)
+
+    def cropClicked(self):
+        self.painting = False
+        cropClicked(self)
+
     def resize(self):
-        pass
-        # self.painting = False
-        # resize(self)
+        self.painting = False
+        resize(self)
 
     def buttonClickToResize(self):
-        pass
-        # self.painting = False
-        # buttonClickToResize(self)
-
-    def crop(self):
-        pass
-        # self.painting = False
-        # crop(self)
-
-    def buttonClicked(self):
-        pass
-        # self.painting = False
-        # buttonClicked(self)
+        self.painting = False
+        buttonClickToResize(self)
 
     def flipH(self):
         pass
-        # self.painting = False
-        # flipH(self)
+        self.painting = False
+        flipH(self)
 
     def flipV(self):
         pass
-        # self.painting = False
-        # flipV(self)
+        self.painting = False
+        flipV(self)
 
     def rotate(self):
-        pass
-        # self.painting = False
-        # rotate(self)
+        self.painting = False
+        rotate(self)
 
     def rotateImage(self, angle):
-        pass
-        # self.painting = False
-        # rotateImage(self, angle)
+        self.painting = False
+        rotateImage(self, angle)
 
-    def rotateImage90(self):
-        pass
-        # rotateImage90(self)
+    def rotateImage90R(self):
+        rotateImage90R(self)
 
-    def rotateImage_90(self):
-        pass
-        # rotateImage_90(self)
+    def rotateImage90L(self):
+        rotateImage90L(self)
+
+    def undoRotation(self):
+        undoRotation(self)
+
 
     def toolFilter(self):
         self.hboxTool = QVBoxLayout()

@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QColo
     QSpinBox
 from PyQt5.QtGui import QIcon, QColor, QFont
 from PyQt5.QtCore import Qt
-from qtpy import QtWidgets
+from PyQt5 import QtWidgets
 
 
 class TextEditor(QMainWindow):
