@@ -407,10 +407,10 @@ class ImageCropper(QMainWindow):
             self.painting = False
             onContrastChanged(self, value, self.pixmap)
 
-    def onTemperatureChanged(self, value):
-        if self.image is not None:
-            self.painting = False
-            onTemperatureChanged(self, value, self.pixmap)
+    # def onTemperatureChanged(self, value):
+    #     if self.image is not None:
+    #         self.painting = False
+    #         onTemperatureChanged(self, value, self.pixmap)
 
     def createToolBarV(self):
         self.buttonOpen = self._createToolBar('../icons/plus.png', self.openfile, "Ctrl+O")

@@ -237,7 +237,7 @@ def onBrightnessChanged(self, value, pixmap):
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
-        apha = 1 + abs(value) / 100
+        apha = 1 + value / 100
         if len(self.brightness) > 0:
             pass
         else:
@@ -260,7 +260,7 @@ def onShadowsChanged(self, value, pixmap):
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
-        apha = 1 - abs(value) / 100
+        apha = 1 - value / 100
         if len(self.shadows) > 0:
             pass
         else:
@@ -282,7 +282,7 @@ def onHightlightsChanged(self, value, pixmap):
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
-        apha = 1 + abs(value) / 100
+        apha = 1 + value / 100
         if len(self.highlights) > 0:
             pass
         else:
@@ -305,7 +305,7 @@ def onSharpnessChanged(self, value, pixmap):
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
-        apha = 1 + abs(value) / 100
+        apha = 1 + value / 100
         if len(self.sharpness) > 0:
             pass
         else:
@@ -328,7 +328,7 @@ def onSaturationChanged(self, value, pixmap):
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
-        apha = 1 + abs(value) / 100
+        apha = 1 + value / 100
         if len(self.saturation) > 0:
             pass
         else:
@@ -351,7 +351,7 @@ def onContrastChanged(self, value, pixmap):
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
-        apha = 1 + abs(value) / 100
+        apha = 1 + value / 100
         if len(self.contrast) > 0:
             pass
         else:
@@ -362,27 +362,27 @@ def onContrastChanged(self, value, pixmap):
         updateView(self, pixmap_new)
 
 
-def onTemperatureChanged(self, value, pixmap):
-    if self.image is not None:
-        self.contrast = ()
-        self.saturation = ()
-        self.sharpness = ()
-        self.highlights = ()
-        self.shadows = ()
-        self.brightness = ()
-        self.labelT.setText('Temperature: {}'.format(value))
-        image = converPixmapToCV(pixmap)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        apha = abs(value) / 100.0
-        if len(self.temperature) > 0:
-            pass
-        else:
-            self.temperature += (image[:, :, 0],)
-            self.temperature += (image[:, :, 2],)
-        image[:, :, 0] = self.temperature[0] * apha
-        image[:, :, 2] = self.temperature[1] * (1 - apha)
-        pixmap_new = convertCVtoPixmap(image)
-        updateView(self, pixmap_new)
+# def onTemperatureChanged(self, value, pixmap):
+#     if self.image is not None:
+#         self.contrast = ()
+#         self.saturation = ()
+#         self.sharpness = ()
+#         self.highlights = ()
+#         self.shadows = ()
+#         self.brightness = ()
+#         self.labelT.setText('Temperature: {}'.format(value))
+#         image = converPixmapToCV(pixmap)
+#         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#         apha = abs(value) / 100.0
+#         if len(self.temperature) > 0:
+#             pass
+#         else:
+#             self.temperature += (image[:, :, 0],)
+#             self.temperature += (image[:, :, 2],)
+#         image[:, :, 0] = self.temperature[0] * apha
+#         image[:, :, 2] = self.temperature[1] * (1 - apha)
+#         pixmap_new = convertCVtoPixmap(image)
+#         updateView(self, pixmap_new)
 
 
 def updateView(self, pixmap):
