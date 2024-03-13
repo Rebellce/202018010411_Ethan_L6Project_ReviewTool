@@ -25,7 +25,7 @@ class ImageCropper(QMainWindow):
         self.initUI()
 
         #  init model
-        self.toolFilter()
+        # self.toolFilter()
         self.toolEdit()
         self.createToolBarV()
         self.initPaint()
@@ -70,11 +70,13 @@ class ImageCropper(QMainWindow):
         # Create tabs for overview the image and filtering
         self.tabs = QTabWidget()
         self.tabEdit = QWidget()
-        self.tabFilter = QWidget()
+        self.tabOCR = QWidget()
+        self.tabAIText = QWidget()
         # No need to set fixed width for the tabFilter, it will be managed by splitter
 
         self.tabs.addTab(self.tabEdit, 'Edit Image')
-        self.tabs.addTab(self.tabFilter, 'Filter')
+        self.tabs.addTab(self.tabOCR, 'OCR Tool')
+        self.tabs.addTab(self.tabAIText, 'AI Detection')
 
         # Add the tabs widget to the splitter
         self.splitter.addWidget(self.tabs)
@@ -208,15 +210,15 @@ class ImageCropper(QMainWindow):
     def alignJustify(self):
         alignJustify(self)
 
-    def toolFilter(self):
-        self.hboxTool = QVBoxLayout()
-        self.blur, self.blurBin = self.createtoolFilter('Box blur', self.boxBlur, True)
-        self.blur1, self.gaus = self.createtoolFilter('Gaussian blur', self.gaussianBlur, True)
-        self.blur2, self.med = self.createtoolFilter('Median blur', self.medianBlur, True)
-        self.hboxTool.addWidget(self.blur)
-        self.hboxTool.addWidget(self.blur1)
-        self.hboxTool.addWidget(self.blur2)
-        self.tabFilter.setLayout(self.hboxTool)
+    # def toolFilter(self):
+        # self.hboxTool = QVBoxLayout()
+        # self.blur, self.blurBin = self.createtoolFilter('Box blur', self.boxBlur, True)
+        # self.blur1, self.gaus = self.createtoolFilter('Gaussian blur', self.gaussianBlur, True)
+        # self.blur2, self.med = self.createtoolFilter('Median blur', self.medianBlur, True)
+        # self.hboxTool.addWidget(self.blur)
+        # self.hboxTool.addWidget(self.blur1)
+        # self.hboxTool.addWidget(self.blur2)
+        # self.tabOCR.setLayout(self.hboxTool)
 
     def createtoolFilter(self, name, log, flag):
         hboxTool = QHBoxLayout()
@@ -235,8 +237,8 @@ class ImageCropper(QMainWindow):
 
     def toolEdit(self):
         self.hbox = QVBoxLayout()
-        self.labelT = QLabel("Temperature: 0")
-        self._tool(self.labelT, self.onTemperatureChanged)
+        # self.labelT = QLabel("Temperature: 0")
+        # self._tool(self.labelT, self.onTemperatureChanged)
         self.labelContrast = QLabel("Contrast: 0")
         self._tool(self.labelContrast, self.onContrastChanged)
         # Saturation
@@ -259,7 +261,7 @@ class ImageCropper(QMainWindow):
     def _tool(self, label, log):
         vbox = QVBoxLayout()
         widgetT = QWidget()
-        widgetT.setFixedHeight(60)
+        widgetT.setFixedHeight(100)
         sliderTem = QSlider(Qt.Horizontal)
         sliderTem.setMinimum(-100)
         sliderTem.setMaximum(100)
@@ -375,60 +377,40 @@ class ImageCropper(QMainWindow):
         color = QColorDialog.getColor()
         self.brushColor = color
 
-    def emboss(self):
-        if self.image is not None:
-            self.painting = False
-            # emboss(self, self.pixmap)
-
-    def boxBlur(self):
-        if self.image is not None:
-            self.painting = False
-            # boxBlur(self, self.pixmap)
-
-    def gaussianBlur(self):
-        if self.image is not None:
-            self.painting = False
-            # gaussianBlur(self, self.pixmap)
-
-    def medianBlur(self):
-        if self.image is not None:
-            self.painting = False
-            # medianBlur(self, self.pixmap)
-
     def onBrightnessChanged(self, value):
         if self.image is not None:
             self.painting = False
-            # onBrightnessChanged(self, value, self.pixmap)
+            onBrightnessChanged(self, value, self.pixmap)
 
     def onShadowsChanged(self, value):
         if self.image is not None:
             self.painting = False
-            # onShadowsChanged(self, value, self.pixmap)
+            onShadowsChanged(self, value, self.pixmap)
 
     def onHightlightsChanged(self, value):
         if self.image is not None:
             self.painting = False
-            # onHightlightsChanged(self, value,self.pixmap)
+            onHightlightsChanged(self, value,self.pixmap)
 
     def onSharpnessChanged(self, value):
         if self.image is not None:
             self.painting = False
-            # onSharpnessChanged(self, value, self.pixmap)
+            onSharpnessChanged(self, value, self.pixmap)
 
     def onSaturationChanged(self, value):
         if self.image is not None:
             self.painting = False
-            # onSaturationChanged(self, value, self.pixmap)
+            onSaturationChanged(self, value, self.pixmap)
 
     def onContrastChanged(self, value):
         if self.image is not None:
             self.painting = False
-            # onContrastChanged(self, value, self.pixmap)
+            onContrastChanged(self, value, self.pixmap)
 
     def onTemperatureChanged(self, value):
         if self.image is not None:
             self.painting = False
-            # onTemperatureChanged(self, value, self.pixmap)
+            onTemperatureChanged(self, value, self.pixmap)
 
     def createToolBarV(self):
         self.buttonOpen = self._createToolBar('../icons/plus.png', self.openfile, "Ctrl+O")
