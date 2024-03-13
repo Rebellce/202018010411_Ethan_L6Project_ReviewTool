@@ -145,8 +145,8 @@ def rotate(self):
         self.view.activate = False
         self.view.crop_rect = None
         self.slider = QSlider(Qt.Horizontal, self)
-        self.slider.setMinimum(0)
-        self.slider.setMaximum(360)
+        self.slider.setMinimum(-180)
+        self.slider.setMaximum(180)
         self.slider.setFixedWidth(self.view.width() // 2.5)
         self.editToolBarH.clear()
         buttonRotateL = QToolButton()
@@ -218,6 +218,7 @@ def rotateImage90L(self):
 
 def undoRotation(self):
     if hasattr(self, 'original_pixmap'):
+        self.slider.setValue(0)
         pixmap = self.original_pixmap  # 恢复原始状态
         self.scene.clear()
         self.scene.setSceneRect(0, 0, pixmap.width(), pixmap.height())
