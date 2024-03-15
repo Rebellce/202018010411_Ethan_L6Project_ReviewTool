@@ -417,12 +417,12 @@ class ImageCropper(QMainWindow):
         self.buttonSave = self._createToolBar('../icons/save.png', self.savefile, "Ctrl+S")
         self.buttonZoomIn = self._createToolBar('../icons/zoom-in.png', self.zoomIn, "Ctrl+=")
         self.buttonZoomOut = self._createToolBar('../icons/zoom-out.png', self.zoomOut, "Ctrl+-")
-        self.buttonCrop = self._createToolBar('../icons/crop.png', self.crop, "Ctrl+A")
-        self.buttonFlipH = self._createToolBar('../icons/flipH.png', self.flipH, "Ctrl+A")
-        self.buttonFlipV = self._createToolBar('../icons/filpV.png', self.flipV, "Ctrl+A")
-        self.buttonResize = self._createToolBar('../icons/resize.png', self.resize, "Ctrl+A")
-        self.buttonRotate = self._createToolBar('../icons/rotate.png', self.rotate, "Ctrl+A")
-        self.buttonText = self._createToolBar('../icons/text.png', self.text, "Ctrl+A")
+        self.buttonCrop = self._createToolBar('../icons/crop.png', self.crop, "Ctrl+X")
+        self.buttonFlipH = self._createToolBar('../icons/flipH.png', self.flipH, "Ctrl+H")
+        self.buttonFlipV = self._createToolBar('../icons/filpV.png', self.flipV, "Ctrl+V")
+        self.buttonResize = self._createToolBar('../icons/resize.png', self.resize, "Ctrl+P")
+        self.buttonRotate = self._createToolBar('../icons/rotate.png', self.rotate, "Ctrl+R")
+        self.buttonText = self._createToolBar('../icons/text.png', self.text, "Ctrl+T")
         self.listTool = [self.buttonOpen, self.buttonSave, self.buttonZoomIn, self.buttonZoomOut, self.buttonCrop,
                          self.buttonFlipH, self.buttonFlipV, \
                          self.buttonResize, self.buttonRotate, self.buttonText]

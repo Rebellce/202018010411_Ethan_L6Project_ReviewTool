@@ -363,29 +363,6 @@ def onContrastChanged(self, value, pixmap):
         updateView(self, pixmap_new)
 
 
-# def onTemperatureChanged(self, value, pixmap):
-#     if self.image is not None:
-#         self.contrast = ()
-#         self.saturation = ()
-#         self.sharpness = ()
-#         self.highlights = ()
-#         self.shadows = ()
-#         self.brightness = ()
-#         self.labelT.setText('Temperature: {}'.format(value))
-#         image = converPixmapToCV(pixmap)
-#         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-#         apha = abs(value) / 100.0
-#         if len(self.temperature) > 0:
-#             pass
-#         else:
-#             self.temperature += (image[:, :, 0],)
-#             self.temperature += (image[:, :, 2],)
-#         image[:, :, 0] = self.temperature[0] * apha
-#         image[:, :, 2] = self.temperature[1] * (1 - apha)
-#         pixmap_new = convertCVtoPixmap(image)
-#         updateView(self, pixmap_new)
-
-
 def updateView(self, pixmap):
     self.scene.clear()
     self.scene.addPixmap(pixmap)
