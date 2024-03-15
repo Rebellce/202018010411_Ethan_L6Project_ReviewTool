@@ -3,6 +3,7 @@ from App.ui.myQGraphicsView import myQGraphicsView as myQGraphicsView
 from App.modules.fileModule import openIMGFile, saveIMGFile
 from App.modules.imgModule import *
 from App.modules.textModule import *
+from App.modules.OCRModule import *
 
 
 class ImageCropper(QMainWindow):
@@ -25,8 +26,8 @@ class ImageCropper(QMainWindow):
         self.initUI()
 
         #  init model
-        # self.toolFilter()
         self.toolEdit()
+        self.setupOCRTab()
         self.createToolBarV()
         self.initPaint()
 
@@ -210,30 +211,27 @@ class ImageCropper(QMainWindow):
     def alignJustify(self):
         alignJustify(self)
 
-    # def toolFilter(self):
-        # self.hboxTool = QVBoxLayout()
-        # self.blur, self.blurBin = self.createtoolFilter('Box blur', self.boxBlur, True)
-        # self.blur1, self.gaus = self.createtoolFilter('Gaussian blur', self.gaussianBlur, True)
-        # self.blur2, self.med = self.createtoolFilter('Median blur', self.medianBlur, True)
-        # self.hboxTool.addWidget(self.blur)
-        # self.hboxTool.addWidget(self.blur1)
-        # self.hboxTool.addWidget(self.blur2)
-        # self.tabOCR.setLayout(self.hboxTool)
+    def setupOCRTab(self):
+        ocrLayout = QVBoxLayout()
+        _layout = QHBoxLayout()
+        # _label = QLabel("Choose model:")
+        # _layout.addWidget(_label)
 
-    def createtoolFilter(self, name, log, flag):
-        hboxTool = QHBoxLayout()
-        widgetFilter = QWidget()
-        button_action = QPushButton(name)
-        button_action.clicked.connect(log)
-        spinBoxW = QSpinBox()
-        spinBoxW.setMinimum(1)
-        spinBoxW.setSingleStep(2)
-        spinBoxW.setValue(3)
-        if flag:
-            hboxTool.addWidget(spinBoxW)
-        hboxTool.addWidget(button_action)
-        widgetFilter.setLayout(hboxTool)
-        return widgetFilter, spinBoxW
+        self.comboBoxInterface = QComboBox()
+        self.comboBoxInterface.addItem("Local Engine")
+        self.comboBoxInterface.addItem("Online Engine")
+        _layout.addWidget(self.comboBoxInterface)
+
+        # self.buttonOCR = QPushButton("识别")
+        self.buttonOCR = self._createToolBar('../icons/OCR.png', self.startOCR, "")
+        _layout.addWidget(self.buttonOCR)
+
+        self.textEditOCRResult = QTextEdit()
+        self.textEditOCRResult.setReadOnly(True)
+
+        ocrLayout.addLayout(_layout)
+        ocrLayout.addWidget(self.textEditOCRResult)
+        self.tabOCR.setLayout(ocrLayout)
 
     def toolEdit(self):
         self.hbox = QVBoxLayout()
@@ -390,7 +388,7 @@ class ImageCropper(QMainWindow):
     def onHightlightsChanged(self, value):
         if self.image is not None:
             self.painting = False
-            onHightlightsChanged(self, value,self.pixmap)
+            onHightlightsChanged(self, value, self.pixmap)
 
     def onSharpnessChanged(self, value):
         if self.image is not None:
@@ -407,10 +405,6 @@ class ImageCropper(QMainWindow):
             self.painting = False
             onContrastChanged(self, value, self.pixmap)
 
-    # def onTemperatureChanged(self, value):
-    #     if self.image is not None:
-    #         self.painting = False
-    #         onTemperatureChanged(self, value, self.pixmap)
 
     def createToolBarV(self):
         self.buttonOpen = self._createToolBar('../icons/plus.png', self.openfile, "Ctrl+O")
@@ -453,3 +447,24 @@ class ImageCropper(QMainWindow):
         window.setLayout(button)
         self.editToolBarV.addWidget(window)
         return toolButton
+
+    #  ====================  OCR Module Functions ====================
+    def startOCR(self):
+        self.painting = False
+        self.buttonOCR.setDisabled(True)
+        self.comboBoxInterface.setDisabled(True)
+        self.textEditOCRResult.clear()
+        if self.comboBoxInterface.currentText() == "Local Engine":
+            self.localOCR()
+            # print("Local Engine")
+        else:
+            self.onlineOCR()
+            # print("Online Engine")
+
+    def localOCR(self):
+        self.painting = False
+        localOCR(self)
+
+    def onlineOCR(self):
+        self.painting = False
+        onlineOCR(self)
