@@ -4,6 +4,8 @@ from App.modules.fileModule import openIMGFile, saveIMGFile
 from App.modules.imgModule import *
 from App.modules.textModule import *
 from App.modules.OCRModule import *
+from App.modules.detectionModule import *
+from App.ui.myGauge import myGaugeWidget
 
 
 class ImageCropper(QMainWindow):
@@ -28,6 +30,7 @@ class ImageCropper(QMainWindow):
         #  init model
         self.toolEdit()
         self.setupOCRTab()
+        self.setupAITextTab()
         self.createToolBarV()
         self.initPaint()
 
@@ -75,12 +78,13 @@ class ImageCropper(QMainWindow):
         self.tabAIText = QWidget()
         # No need to set fixed width for the tabFilter, it will be managed by splitter
 
-        self.tabs.addTab(self.tabEdit, 'Edit Image')
-        self.tabs.addTab(self.tabOCR, 'OCR Tool')
-        self.tabs.addTab(self.tabAIText, 'AI Detection')
+        self.tabs.addTab(self.tabEdit, 'ImageEditor')
+        self.tabs.addTab(self.tabOCR, 'OCRTool')
+        self.tabs.addTab(self.tabAIText, 'AITextDetector')
 
         # Add the tabs widget to the splitter
         self.splitter.addWidget(self.tabs)
+        self.tabs.currentChanged.connect(self.onTabChanged)
 
         # Add the splitter to the main layout
         self.layout.addWidget(self.splitter)
@@ -210,6 +214,39 @@ class ImageCropper(QMainWindow):
 
     def alignJustify(self):
         alignJustify(self)
+
+    def setupAITextTab(self):
+        tabLayout = QVBoxLayout()  # 主布局是垂直布局
+
+        # 创建上方的按钮布局
+        buttonLayout = QHBoxLayout()  # 按钮布局是水平布局
+        self.buttonFromOCR = QPushButton("OCR")
+        self.buttonStart = QPushButton("Start!")
+        # 可以连接按钮的clicked事件到相应的槽函数
+        # self.buttonOCR.clicked.connect(self.onOCRClicked)
+        # self.buttonStart.clicked.connect(self.onStartClicked)
+        buttonLayout.addWidget(self.buttonFromOCR)
+        buttonLayout.addWidget(self.buttonStart)
+
+        self.textEditAIText = QTextEdit()
+        self.textEditAIText.setPlaceholderText("Enter text here for AI detection...")
+
+        # 创建两个myGaugeWidget控件并添加到水平布局中
+        gaugesLayout = QHBoxLayout()  # 新的水平布局
+        gaugesLayout.setContentsMargins(0, 0, 0, 0)  # 减少仪表盘布局的边距
+        gaugesLayout.setSpacing(0)  # 减少仪表盘之间的间距
+        self.myGaugeWidget1 = myGaugeWidget(number=50)
+        self.myGaugeWidget2 = myGaugeWidget(number=90)
+        gaugesLayout.addWidget(self.myGaugeWidget1)
+        gaugesLayout.addWidget(self.myGaugeWidget2)
+
+        # 将组件添加到主布局
+        tabLayout.addLayout(buttonLayout)
+        tabLayout.addWidget(self.textEditAIText)
+        tabLayout.addLayout(gaugesLayout)  # 将包含两个仪表盘的布局添加到主布局
+
+        # 将布局设置到AI Text Detection tab中
+        self.tabAIText.setLayout(tabLayout)
 
     def setupOCRTab(self):
         ocrLayout = QVBoxLayout()
@@ -366,6 +403,11 @@ class ImageCropper(QMainWindow):
             # draw rectangle  on the canvas
             canvasPainter.drawPixmap(self.rect(), self.pixmap, self.pixmap.rect())
 
+    def onTabChanged(self, index):
+        if self.tabs.tabText(index) == 'AITextDetector':
+            self.myGaugeWidget1.refreshGauge()
+            self.myGaugeWidget2.refreshGauge()
+
     def updateView(self):
         self.scene.clear()
         self.scene.addPixmap(self.pixmap)
@@ -404,7 +446,6 @@ class ImageCropper(QMainWindow):
         if self.image is not None:
             self.painting = False
             onContrastChanged(self, value, self.pixmap)
-
 
     def createToolBarV(self):
         self.buttonOpen = self._createToolBar('../icons/plus.png', self.openfile, "Ctrl+O")
@@ -468,3 +509,5 @@ class ImageCropper(QMainWindow):
     def onlineOCR(self):
         self.painting = False
         onlineOCR(self)
+
+    #  ====================  Detection Module Functions ====================
