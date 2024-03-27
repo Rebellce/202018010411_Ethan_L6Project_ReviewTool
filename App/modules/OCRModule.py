@@ -27,11 +27,15 @@ def localOCR(self):
         img = _getIMGObject(self.pixmap)
         text = pytesseract.image_to_string(img, lang='eng')
         if text:
-            self.textEditOCRResult.setText("OCR Result by Local Engine:\n" + text)
+            self.textEditOCRResult.setText(text)
+            self.OCRSwitch = True
+            return
         else:
             self.textEditOCRResult.setHtml(formatError("No text recognized!"))
+            self.OCRSwitch = False
     else:
         self.textEditOCRResult.setHtml(formatError("No image to recognize!"))
+        self.OCRSwitch = False
     self.buttonOCR.setDisabled(False)
     self.comboBoxInterface.setDisabled(False)
 
@@ -68,25 +72,32 @@ def onlineOCR(self):
                     for line in region.get("lines", []):
                         text += line.get("text") + "\n"
                 if text:
-                    self.textEditOCRResult.setText("OCR Result:\n" + text)
+                    self.textEditOCRResult.setText(text)
+                    self.OCRSwitch = True
                 else:
                     self.textEditOCRResult.setHtml(formatError("No text recognized!"))
+                    self.OCRSwitch = False
             else:
                 self.textEditOCRResult.setText("Online engine error, status code: " + str(response.status_code))
+                self.OCRSwitch = False
 
         except requests.exceptions.RequestException as e:
             error_message = "Network error: " + str(e)
             self.textEditOCRResult.setHtml(formatError(error_message))
+            self.OCRSwitch = False
 
         except ValueError as e:
             error_message = "Error processing the OCR results: " + str(e)
             self.textEditOCRResult.setHtml(formatError(error_message))
+            self.OCRSwitch = False
 
         except Exception as e:
             error_message = "An unexpected error occurred: " + str(e)
             self.textEditOCRResult.setHtml(formatError(error_message))
+            self.OCRSwitch = False
     else:
         self.textEditOCRResult.setHtml(formatError("No image to recognize!"))
+        self.OCRSwitch = False
 
     self.buttonOCR.setDisabled(False)
     self.comboBoxInterface.setDisabled(False)
@@ -136,3 +147,4 @@ def formatError(message):
     """Format the error message with red color using HTML."""
 
     return f"<p style='color: red;'>{message}</p>"
+

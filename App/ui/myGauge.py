@@ -1,12 +1,20 @@
 from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QVBoxLayout, QWidget, QLabel
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 
 
 class myGaugeWidget(QWidget):
-    def __init__(self, parent=None, number=100):
+    def __init__(self, parent=None, number=100, _type="", label="", color=55):
+        """
+        :param number: show the percentage of the gauge
+        :param label: show the title of the gauge
+        :param color: range 0~99, (0 is red) rainbow color, special parameter is "i" to show the rainbow color
+        """
         super().__init__(parent)
         self.number = number
+        self.label = label
+        self.color = color
+        self.type = _type
         self.initUI()
 
     def initUI(self):
@@ -77,17 +85,32 @@ class myGaugeWidget(QWidget):
                   transition: 0.8s linear;
                 }
 
-
                 #pc {
                   color: #00aaff; 
-                  font-size: 15vw;
+                  font-size: 12vw;
                   font-weight: bold;
                   font-family: Arial, Helvetica, sans-serif;
                   text-shadow: 0.3vw 0.1vw 0.3vw darkgray, 0 0 0.5vw darkgray, 0 0 1vw darkgray;
+                  text-align: center;
+                }
+                #type {
+                    color: #00aaff; 
+                    font-size: 12vw;
+                    font-weight: bold;
+                    font-family: Arial, Helvetica, sans-serif;
+                    text-shadow: 0.3vw 0.1vw 0.3vw darkgray, 0 0 0.5vw darkgray, 0 0 1vw darkgray;
+                    text-align: center;
+                }
+                #lab {
+                    color: #00aaff; 
+                    font-size: 8vw;
+                    font-weight: bold;
+                    font-family: Arial, Helvetica, sans-serif;
+                    text-shadow: 0.3vw 0.1vw 0.3vw darkgray, 0 0 0.5vw darkgray, 0 0 1vw darkgray;
+                    text-align: center;
                 }
 
-
-                        </style>
+                </style>
 
                 <head>
                     <meta charset="UTF-8">
@@ -97,6 +120,8 @@ class myGaugeWidget(QWidget):
                     <div class="main"></div>
                     <label id="range" value=0 step="0.1"/>
                     <p id="pc">0%%</p>
+                    <p id="type">%(type)s</p>
+                    <p id="lab">%(label)s</p>
                 </body>
 
                 </html>
@@ -120,34 +145,53 @@ class myGaugeWidget(QWidget):
                             block.style.setProperty('--sg', 'transparent');
                         }
                         else {
-                            block.style.setProperty('--bg', 'hsl(' + 55 / 100 * 360 + ',100%%,50%%)');
-                            block.style.setProperty('--sg', 'hsl(' + 55 / 100 * 360 + ',100%%,50%%)');
+                            block.style.setProperty('--bg', 'hsl(' + %(color)s / 100 * 360 + ',100%%,50%%)');
+                            block.style.setProperty('--sg', 'hsl(' + %(color)s / 100 * 360 + ',100%%,50%%)');
                         }
                     }
                 }
 
                 window.onload = function() {
-                    var initialValue = 0;
-                    var targetValue = %(number)s; 
-                    var interval = setInterval(function() {
-                        initialValue += 0.2; 
-                        var formattedValue = initialValue.toFixed(1); 
-                        range.value = formattedValue;
-                        range.style.backgroundSize = formattedValue + "%% 100%%";
-                        pc.innerHTML = formattedValue + "%%";
-                        dash(parseFloat(formattedValue));
+                var initialValue = 0;
+                var targetValue = %(number)s; 
+                var duration = 1500; 
+                var updateInterval = 30; 
+                var totalSteps = duration / updateInterval;
+                var incrementPerStep = targetValue / totalSteps; 
+            
+                var interval = setInterval(function() {
+                    initialValue += incrementPerStep; 
+                    if(initialValue >= targetValue) {
+                        initialValue = targetValue;
+                        clearInterval(interval); 
+                    }
+                    var formattedValue = initialValue.toFixed(1); 
+                    range.value = formattedValue;
+                    range.style.backgroundSize = formattedValue + "%% 100%%";
+                    pc.innerHTML = formattedValue + "%%";
+                    dash(parseFloat(formattedValue));
+                }, updateInterval); 
+            };
 
-                        if(initialValue >= targetValue) {
-                            clearInterval(interval); 
-                        }
-                    }, 1); 
-                }
                 </script>
 
-                        """ % {"number": self.number}
+                        """ % {"number": self.number, "color": self.color, "type": self.type, "label": self.label}
         self.webEngineView.setHtml(html_content)
 
-    def refreshGauge(self, number=None):
+    def refreshGauge(self, number=None, label=None, color=None):
         if number is not None:
             self.number = number
+        if label is not None:
+            self.label = label
+        if color is not None:
+            self.color = color
         self.loadContent()
+
+if __name__ == '__main__':
+    import sys
+    from PyQt5.QtWidgets import QApplication
+
+    app = QApplication(sys.argv)
+    w = myGaugeWidget(number=50, _type="GPT", label="Highly likely human", color=50)
+    w.show()
+    sys.exit(app.exec_())

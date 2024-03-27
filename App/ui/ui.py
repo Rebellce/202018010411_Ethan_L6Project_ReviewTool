@@ -6,6 +6,7 @@ from App.modules.textModule import *
 from App.modules.OCRModule import *
 from App.modules.detectionModule import *
 from App.ui.myGauge import myGaugeWidget
+from App.ui.myLabelList import myLabelList
 
 
 class ImageCropper(QMainWindow):
@@ -13,6 +14,8 @@ class ImageCropper(QMainWindow):
         super().__init__()
 
         #  init picture settings
+        self.detector = None
+        self.OCRSwitch = False
         self.scale = 1
         self.image = None
         self.painting = False
@@ -43,14 +46,14 @@ class ImageCropper(QMainWindow):
     def initUI(self):
         # set window size and position
         screen = QDesktopWidget().screenGeometry()
-        self.width = screen.width() * 0.5
+        width = screen.width() * 0.5
         ratio = 3 / 4
-        self.height = self.width * ratio  # adjust the ratio
-        self.width = min(self.width, screen.width() / 2)
-        self.height = min(self.height, screen.height() * ratio)
-        self.left = (screen.width() - self.width) / 2
-        self.top = (screen.height() - self.height) / 2
-        self.setGeometry(int(self.left), int(self.top), int(self.width), int(self.height))
+        height = width * ratio  # adjust the ratio
+        width = min(width, screen.width() / 2)
+        height = min(height, screen.height() * ratio)
+        self.left = (screen.width() - width) / 2
+        self.top = (screen.height() - height) / 2
+        self.setGeometry(int(self.left), int(self.top), int(width), int(height))
 
         # overview of the window
         self.setWindowTitle("Educational Assistant Tool")
@@ -89,7 +92,7 @@ class ImageCropper(QMainWindow):
         # Add the splitter to the main layout
         self.layout.addWidget(self.splitter)
 
-        initialSizes = [self.width * 0.75, self.width * 0.25]
+        initialSizes = [width * 0.75, width * 0.25]
         self.splitter.setSizes(initialSizes)
 
         # The splitter handle allows resizing of the contained widgets
@@ -216,37 +219,48 @@ class ImageCropper(QMainWindow):
         alignJustify(self)
 
     def setupAITextTab(self):
-        tabLayout = QVBoxLayout()  # 主布局是垂直布局
+        # 使用QSplitter来创建可调整大小的布局
+        splitter = QSplitter(Qt.Vertical)  # 垂直分割器
 
-        # 创建上方的按钮布局
-        buttonLayout = QHBoxLayout()  # 按钮布局是水平布局
-        self.buttonFromOCR = QPushButton("OCR")
-        self.buttonStart = QPushButton("Start!")
-        # 可以连接按钮的clicked事件到相应的槽函数
-        # self.buttonOCR.clicked.connect(self.onOCRClicked)
-        # self.buttonStart.clicked.connect(self.onStartClicked)
-        buttonLayout.addWidget(self.buttonFromOCR)
-        buttonLayout.addWidget(self.buttonStart)
+        controlWidget = QWidget()
+        controlLayout = QVBoxLayout()
 
         self.textEditAIText = QTextEdit()
         self.textEditAIText.setPlaceholderText("Enter text here for AI detection...")
+        buttonLayout = QHBoxLayout()
+        self.buttonFromOCR = QPushButton("Copy from OCR")
+        self.buttonFromOCR.clicked.connect(self.onCopyFromOCR)
+        self.buttonAIStart = QPushButton("Start detect")
+        self.buttonAIStart.clicked.connect(self.onStartAI)
+        self.buttonReloadModel = QPushButton("Reload model")
+        self.buttonReloadModel.clicked.connect(self.onReloadModel)
+        controlLayout.addWidget(self.textEditAIText)
+        controlLayout.addLayout(buttonLayout)
+        buttonLayout.addWidget(self.buttonFromOCR)
+        buttonLayout.addWidget(self.buttonAIStart)
+        buttonLayout.addWidget(self.buttonReloadModel)
+        controlWidget.setLayout(controlLayout)
+        self.buttonFromOCR.hide()
+        self.buttonAIStart.hide()
 
-        # 创建两个myGaugeWidget控件并添加到水平布局中
-        gaugesLayout = QHBoxLayout()  # 新的水平布局
-        gaugesLayout.setContentsMargins(0, 0, 0, 0)  # 减少仪表盘布局的边距
-        gaugesLayout.setSpacing(0)  # 减少仪表盘之间的间距
-        self.myGaugeWidget1 = myGaugeWidget(number=50)
-        self.myGaugeWidget2 = myGaugeWidget(number=90)
-        gaugesLayout.addWidget(self.myGaugeWidget1)
-        gaugesLayout.addWidget(self.myGaugeWidget2)
+        self.detectResultWidget = QWidget()
+        self.detectResultLayout = QVBoxLayout()
+        self.detectResultLayout.setContentsMargins(0, 0, 0, 0)
+        self.detectResultLabel = QLabel()
+        self.detectResultLayout.addWidget(self.detectResultLabel)
+        self.detectResultContent = myLabelList()
+        self.detectResultWidget.setLayout(self.detectResultLayout)
+        self.detectResultLayout.addWidget(self.detectResultContent)
+        self.detectResultContent.hide()
 
-        # 将组件添加到主布局
-        tabLayout.addLayout(buttonLayout)
-        tabLayout.addWidget(self.textEditAIText)
-        tabLayout.addLayout(gaugesLayout)  # 将包含两个仪表盘的布局添加到主布局
-
-        # 将布局设置到AI Text Detection tab中
-        self.tabAIText.setLayout(tabLayout)
+        splitter.addWidget(controlWidget)
+        splitter.addWidget(self.detectResultWidget)
+        splitter.setCollapsible(0, False)
+        splitter.setCollapsible(1, False)
+        splitter.setSizes([2000, 1000])
+        mainLayout = QVBoxLayout(self)
+        mainLayout.addWidget(splitter)
+        self.tabAIText.setLayout(mainLayout)
 
     def setupOCRTab(self):
         ocrLayout = QVBoxLayout()
@@ -405,8 +419,18 @@ class ImageCropper(QMainWindow):
 
     def onTabChanged(self, index):
         if self.tabs.tabText(index) == 'AITextDetector':
-            self.myGaugeWidget1.refreshGauge()
-            self.myGaugeWidget2.refreshGauge()
+            # self.myGaugeWidget1.refreshGauge()
+            # self.myGaugeWidget2.refreshGauge()
+            if self.OCRSwitch:
+                self.buttonFromOCR.show()
+            else:
+                self.buttonFromOCR.hide()
+            if self.detector is None:
+                self.onReloadModel()
+            elif self.detector is False:
+                self.buttonAIStart.hide()
+            else:
+                self.buttonAIStart.show()
 
     def updateView(self):
         self.scene.clear()
@@ -511,3 +535,24 @@ class ImageCropper(QMainWindow):
         onlineOCR(self)
 
     #  ====================  Detection Module Functions ====================
+    def onCopyFromOCR(self):
+        self.textEditAIText.setText(self.textEditOCRResult.toPlainText())
+
+    def onStartAI(self):
+        self.detectResultContent.show()
+        self.detector.startAIDetector(self)
+
+    def onReloadModel(self):
+        self.buttonAIStart.hide()
+        self.detectResultLabel.clear()
+        try:
+            self.detector = Detector()
+        except Exception as e:
+            self.detector = False
+            self.detectResultLabel.setText(f"<font color='red'>Failed to load model..</font>")
+            self.detectResultContent.hide()
+            self.buttonReloadModel.show()
+        if self.detector:
+            self.detectResultLabel.setText(f"<font color='black'>The detection model is ready!</font>")
+            self.buttonAIStart.show()
+            self.buttonReloadModel.hide()
