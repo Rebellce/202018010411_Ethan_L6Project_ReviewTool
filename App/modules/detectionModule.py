@@ -1,3 +1,4 @@
+from PyQt5.QtCore import QThread, pyqtSignal
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import torch
 
@@ -5,11 +6,34 @@ import torch
 import logging
 
 
+class DetectThread(QThread):
+    finished = pyqtSignal(str, bool)
+
+    def __init__(self, detector, parent=None):
+        super().__init__(parent)
+        self.detector = detector
+        self.text = ""
+        self.errorFlag = False
+
+    def run(self):
+        print("DetectThread started")
+        try:
+            self.detector.initModel()
+        except Exception:
+            self.detector.initState = False
+            self.text = f"Failed to load model.."
+            self.errorFlag = True
+        if self.detector.initState:
+            self.text = f"Model loaded successfully!"
+            self.errorFlag = False
+        self.finished.emit(self.text, self.errorFlag)
+
+
 class Detector:
     def __init__(self):
         self.model = None
         self.tokenizer = None
-        self.initModel()
+        self.initState = None
 
     def initModel(self):
         logging.getLogger("transformers").setLevel(logging.ERROR)

@@ -8,163 +8,163 @@ import cv2
 import numpy as np
 
 
-def zoomIn(self):
-    self.editToolBarH.clear()
-    self.view.activate = False
-    self.view.crop_rect = None
-    self.scale = 1.1
-    self.actionZoom()
+def zoomIn(ui):
+    ui.editToolBarH.clear()
+    ui.view.activate = False
+    ui.view.crop_rect = None
+    ui.scale = 1.1
+    ui.actionZoom()
 
 
-def zoomOut(self):
-    self.editToolBarH.clear()
-    self.view.activate = False
-    self.view.crop_rect = None
-    self.scale = 0.9
-    self.actionZoom()
+def zoomOut(ui):
+    ui.editToolBarH.clear()
+    ui.view.activate = False
+    ui.view.crop_rect = None
+    ui.scale = 0.9
+    ui.actionZoom()
 
 
-def actionZoom(self):
-    if self.image is not None:
-        self.view.scale(self.scale, self.scale)
+def actionZoom(ui):
+    if ui.image is not None:
+        ui.view.scale(ui.scale, ui.scale)
 
 
-def crop(self):
+def crop(ui):
     # self = crop(self)
-    if self.buttonCrop.isChecked and self.image is not None:
-        self.editToolBarH.clear()
-        self.view.activate = True
+    if ui.buttonCrop.isChecked and ui.image is not None:
+        ui.editToolBarH.clear()
+        ui.view.activate = True
         buttonCrop = QToolButton()
         buttonCrop.setText('OK')
         buttonCrop.setAutoRaise(True)
         buttonCrop.setIcon(QIcon('../icons/check.png'))
-        buttonCrop.clicked.connect(self.cropClicked)
+        buttonCrop.clicked.connect(ui.cropClicked)
         left_spacer = QWidget()
         left_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         right_spacer = QWidget()
         right_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.editToolBarH.addWidget(left_spacer)
-        self.editToolBarH.addWidget(buttonCrop)
-        self.editToolBarH.addWidget(right_spacer)
+        ui.editToolBarH.addWidget(left_spacer)
+        ui.editToolBarH.addWidget(buttonCrop)
+        ui.editToolBarH.addWidget(right_spacer)
 
 
-def cropClicked(self):
-    crop_start, crop_end = self.view.getResult()
+def cropClicked(ui):
+    crop_start, crop_end = ui.view.getResult()
     if crop_start is not None and crop_end is not None:
-        x, y, x1, y1 = self.view.mapToScene(crop_start).x(), self.view.mapToScene(crop_start).y(), self.view.mapToScene(
-            crop_end).x(), self.view.mapToScene(crop_end).y()
+        x, y, x1, y1 = ui.view.mapToScene(crop_start).x(), ui.view.mapToScene(crop_start).y(), ui.view.mapToScene(
+            crop_end).x(), ui.view.mapToScene(crop_end).y()
         x = 0 if x < 0 else x
         y = 0 if y < 0 else y
-        x1 = self.pixmap.width() if x1 > self.pixmap.width() else x1
-        y1 = self.pixmap.height() if y1 > self.pixmap.height() else y1
+        x1 = ui.pixmap.width() if x1 > ui.pixmap.width() else x1
+        y1 = ui.pixmap.height() if y1 > ui.pixmap.height() else y1
         crop_rect = QRectF(x, y, x1 - x, y1 - y)
-        self.pixmap = self.pixmap.copy(crop_rect.toRect())
-        self.view.crop_rect = None
-        self.view.crop_start = None
-        self.view.crop_end = None
-        self.scene.clear()  # Clear the scene
-        self.scene.setSceneRect(0, 0, self.pixmap.width(), self.pixmap.height())
-        self.scene.addPixmap(self.pixmap)
-        self.scene.update()
+        ui.pixmap = ui.pixmap.copy(crop_rect.toRect())
+        ui.view.crop_rect = None
+        ui.view.crop_start = None
+        ui.view.crop_end = None
+        ui.scene.clear()  # Clear the scene
+        ui.scene.setSceneRect(0, 0, ui.pixmap.width(), ui.pixmap.height())
+        ui.scene.addPixmap(ui.pixmap)
+        ui.scene.update()
 
 
-def resize(self):
-    if self.image is not None:
-        self.editToolBarH.clear()
-        self.view.activate = False
-        self.view.crop_rect = None
+def resize(ui):
+    if ui.image is not None:
+        ui.editToolBarH.clear()
+        ui.view.activate = False
+        ui.view.crop_rect = None
         window = QWidget()
         width = QLabel()
         width.setText('Width:')
         height = QLabel()
         height.setText('Height:')
-        self.spinBoxW = QSpinBox()
-        self.spinBoxW.setMinimum(100)
-        self.spinBoxW.setMaximum(2100)
-        self.spinBoxW.setSingleStep(1)
-        self.spinBoxW.setValue(100)
+        ui.spinBoxW = QSpinBox()
+        ui.spinBoxW.setMinimum(100)
+        ui.spinBoxW.setMaximum(2100)
+        ui.spinBoxW.setSingleStep(1)
+        ui.spinBoxW.setValue(100)
 
-        self.spinBoxH = QSpinBox()
-        self.spinBoxH.setMinimum(100)
-        self.spinBoxH.setMaximum(2100)
-        self.spinBoxH.setSingleStep(1)
-        self.spinBoxH.setValue(100)
-        button_action = QAction(self)
+        ui.spinBoxH = QSpinBox()
+        ui.spinBoxH.setMinimum(100)
+        ui.spinBoxH.setMaximum(2100)
+        ui.spinBoxH.setSingleStep(1)
+        ui.spinBoxH.setValue(100)
+        button_action = QAction(ui)
         button_action.setIcon(QIcon('../icons/check.png'))
-        button_action.triggered.connect(self.buttonClickToResize)
+        button_action.triggered.connect(ui.buttonClickToResize)
         toolBarH = QHBoxLayout()
         toolBarH.addWidget(width)
-        toolBarH.addWidget(self.spinBoxW)
+        toolBarH.addWidget(ui.spinBoxW)
         toolBarH.addWidget(height)
-        toolBarH.addWidget(self.spinBoxH)
+        toolBarH.addWidget(ui.spinBoxH)
         window.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         window.setLayout(toolBarH)
-        self.editToolBarH.addWidget(window)
-        self.editToolBarH.addAction(button_action)
+        ui.editToolBarH.addWidget(window)
+        ui.editToolBarH.addAction(button_action)
 
 
-def buttonClickToResize(self):
-    if self.spinBoxW.value() is not None and self.spinBoxH.value() is not None:
-        width = self.spinBoxW.value()
-        height = self.spinBoxH.value()
-        self.pixmap = self.pixmap.scaled(QSize(width, height), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
-        self.scene.clear()  # Clear the scene
-        self.scene.setSceneRect(0, 0, self.pixmap.width(), self.pixmap.height())
-        self.scene.addPixmap(self.pixmap)
-        self.scene.update()
+def buttonClickToResize(ui):
+    if ui.spinBoxW.value() is not None and ui.spinBoxH.value() is not None:
+        width = ui.spinBoxW.value()
+        height = ui.spinBoxH.value()
+        ui.pixmap = ui.pixmap.scaled(QSize(width, height), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+        ui.scene.clear()  # Clear the scene
+        ui.scene.setSceneRect(0, 0, ui.pixmap.width(), ui.pixmap.height())
+        ui.scene.addPixmap(ui.pixmap)
+        ui.scene.update()
 
 
-def flipH(self):
+def flipH(ui):
     scale = (-1, 1)
-    flip(self, scale)
+    flip(ui, scale)
 
 
-def flipV(self):
+def flipV(ui):
     scale = (1, -1)
-    flip(self, scale)
+    flip(ui, scale)
 
 
-def flip(self, scale: tuple):
-    if self.image is not None:
-        self.editToolBarH.clear()
-        self.view.activate = False
-        self.view.crop_rect = None
-        self.pixmap = self.pixmap.transformed(QTransform().scale(scale[0], scale[1]))
-        self.pixmap = self.pixmap.copy()
-        self.scene.setSceneRect(0, 0, self.pixmap.width(), self.pixmap.height())
-        self.scene.clear()
-        self.scene.addPixmap(self.pixmap)
-        self.scene.update()
+def flip(ui, scale: tuple):
+    if ui.image is not None:
+        ui.editToolBarH.clear()
+        ui.view.activate = False
+        ui.view.crop_rect = None
+        ui.pixmap = ui.pixmap.transformed(QTransform().scale(scale[0], scale[1]))
+        ui.pixmap = ui.pixmap.copy()
+        ui.scene.setSceneRect(0, 0, ui.pixmap.width(), ui.pixmap.height())
+        ui.scene.clear()
+        ui.scene.addPixmap(ui.pixmap)
+        ui.scene.update()
 
 
-def rotate(self):
-    if self.image is not None:
-        self.original_pixmap = self.pixmap.copy()
-        self.pixmap_ = self.pixmap.copy()
-        self.editToolBarH.clear()
-        self.view.activate = False
-        self.view.crop_rect = None
-        self.slider = QSlider(Qt.Horizontal, self)
-        self.slider.setMinimum(-180)
-        self.slider.setMaximum(180)
-        self.slider.setFixedWidth(self.view.width() // 2.5)
-        self.editToolBarH.clear()
+def rotate(ui):
+    if ui.image is not None:
+        ui.original_pixmap = ui.pixmap.copy()
+        ui.pixmap_ = ui.pixmap.copy()
+        ui.editToolBarH.clear()
+        ui.view.activate = False
+        ui.view.crop_rect = None
+        ui.slider = QSlider(Qt.Horizontal, ui)
+        ui.slider.setMinimum(-180)
+        ui.slider.setMaximum(180)
+        ui.slider.setFixedWidth(ui.view.width() // 2.5)
+        ui.editToolBarH.clear()
         buttonRotateL = QToolButton()
-        buttonRotateL.clicked.connect(self.rotateImage90R)
+        buttonRotateL.clicked.connect(ui.rotateImage90R)
         buttonRotateL.setIcon(QIcon('../icons/rotateLeft.png'))
         buttonRotateR = QToolButton()
-        buttonRotateR.clicked.connect(self.rotateImage90L)
+        buttonRotateR.clicked.connect(ui.rotateImage90L)
         buttonRotateR.setIcon(QIcon('../icons/rotateRight.png'))
-        self.slider.valueChanged.connect(self.rotateImage)
+        ui.slider.valueChanged.connect(ui.rotateImage)
         buttonUndoRotation = QToolButton()
-        buttonUndoRotation.clicked.connect(self.undoRotation)
+        buttonUndoRotation.clicked.connect(ui.undoRotation)
         buttonUndoRotation.setIcon(QIcon('../icons/undo.png'))
         window = QWidget()
         toolBarH = QHBoxLayout()
         toolBarH.setSizeConstraint(QLayout.SetFixedSize)
         toolBarH.addWidget(buttonRotateL)
         toolBarH.addWidget(buttonRotateR)
-        toolBarH.addWidget(self.slider)
+        toolBarH.addWidget(ui.slider)
         toolBarH.addWidget(buttonUndoRotation)
         window.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         window.setLayout(toolBarH)
@@ -172,201 +172,201 @@ def rotate(self):
         left_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         right_spacer = QWidget()
         right_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.editToolBarH.addWidget(left_spacer)
-        self.editToolBarH.addWidget(window)
-        self.editToolBarH.addWidget(right_spacer)
+        ui.editToolBarH.addWidget(left_spacer)
+        ui.editToolBarH.addWidget(window)
+        ui.editToolBarH.addWidget(right_spacer)
 
 
-def rotateImage(self, angle):
-    image = converPixmapToCV(self.pixmap_)
+def rotateImage(ui, angle):
+    image = converPixmapToCV(ui.pixmap_)
     rotated_image = imutils.rotate_bound(image, angle)
     pixmap = QPixmap.fromImage(
         QImage(rotated_image, rotated_image.shape[1], rotated_image.shape[0], rotated_image.strides[0],
                QImage.Format_RGB888).rgbSwapped())
-    self.pixmap = pixmap
-    self.scene.clear()
-    self.scene.setSceneRect(0, 0, self.pixmap.width(), self.pixmap.height())
-    self.scene.addPixmap(self.pixmap)
-    self.scene.update()
+    ui.pixmap = pixmap
+    ui.scene.clear()
+    ui.scene.setSceneRect(0, 0, ui.pixmap.width(), ui.pixmap.height())
+    ui.scene.addPixmap(ui.pixmap)
+    ui.scene.update()
 
 
-def rotateImage90R(self):
-    image = converPixmapToCV(self.pixmap)
+def rotateImage90R(ui):
+    image = converPixmapToCV(ui.pixmap)
     rotated_image = imutils.rotate_bound(image, -90)
     pixmap = QPixmap.fromImage(
         QImage(rotated_image, rotated_image.shape[1], rotated_image.shape[0], rotated_image.strides[0],
                QImage.Format_RGB888).rgbSwapped())
-    self.pixmap = pixmap
-    self.scene.clear()
-    self.scene.setSceneRect(0, 0, self.pixmap.width(), self.pixmap.height())
-    self.scene.addPixmap(self.pixmap)
-    self.scene.update()
+    ui.pixmap = pixmap
+    ui.scene.clear()
+    ui.scene.setSceneRect(0, 0, ui.pixmap.width(), ui.pixmap.height())
+    ui.scene.addPixmap(ui.pixmap)
+    ui.scene.update()
 
 
-def rotateImage90L(self):
-    image = converPixmapToCV(self.pixmap)
+def rotateImage90L(ui):
+    image = converPixmapToCV(ui.pixmap)
     rotated_image = imutils.rotate_bound(image, 90)
     pixmap = QPixmap.fromImage(
         QImage(rotated_image, rotated_image.shape[1], rotated_image.shape[0], rotated_image.strides[0],
                QImage.Format_RGB888).rgbSwapped())
-    self.pixmap = pixmap
-    self.scene.clear()
-    self.scene.setSceneRect(0, 0, self.pixmap.width(), self.pixmap.height())
-    self.scene.addPixmap(self.pixmap)
-    self.scene.update()
+    ui.pixmap = pixmap
+    ui.scene.clear()
+    ui.scene.setSceneRect(0, 0, ui.pixmap.width(), ui.pixmap.height())
+    ui.scene.addPixmap(ui.pixmap)
+    ui.scene.update()
 
 
-def undoRotation(self):
-    if hasattr(self, 'original_pixmap'):
-        self.slider.setValue(0)
-        pixmap = self.original_pixmap  # 恢复原始状态
-        self.scene.clear()
-        self.scene.setSceneRect(0, 0, pixmap.width(), pixmap.height())
-        self.scene.addPixmap(pixmap)
-        self.scene.update()
+def undoRotation(ui):
+    if hasattr(ui, 'original_pixmap'):
+        ui.slider.setValue(0)
+        pixmap = ui.original_pixmap  # 恢复原始状态
+        ui.scene.clear()
+        ui.scene.setSceneRect(0, 0, pixmap.width(), pixmap.height())
+        ui.scene.addPixmap(pixmap)
+        ui.scene.update()
 
 
-def onBrightnessChanged(self, value, pixmap):
-    if self.image is not None:
-        self.temperature = ()
-        self.contrast = ()
-        self.saturation = ()
-        self.sharpness = ()
-        self.highlights = ()
-        self.shadows = ()
-        self.labelBrightness.setText('Brightness: {}'.format(value))
+def onBrightnessChanged(ui, value, pixmap):
+    if ui.image is not None:
+        ui.temperature = ()
+        ui.contrast = ()
+        ui.saturation = ()
+        ui.sharpness = ()
+        ui.highlights = ()
+        ui.shadows = ()
+        ui.labelBrightness.setText('Brightness: {}'.format(value))
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
         apha = 1 + value / 100
-        if len(self.brightness) > 0:
+        if len(ui.brightness) > 0:
             pass
         else:
-            self.brightness += (image,)
-        enhancer = ImageEnhance.Brightness(self.brightness[0])
+            ui.brightness += (image,)
+        enhancer = ImageEnhance.Brightness(ui.brightness[0])
         im_output = enhancer.enhance(apha)
         pixmap_new = convertPILtoPixmap(im_output)
-        updateView(self, pixmap_new)
+        updateView(ui, pixmap_new)
 
 
-def onShadowsChanged(self, value, pixmap):
-    if self.image is not None:
-        self.temperature = ()
-        self.contrast = ()
-        self.saturation = ()
-        self.sharpness = ()
-        self.highlights = ()
-        self.brightness = ()
-        self.labelShadows.setText('Shadows: {}'.format(value))
+def onShadowsChanged(ui, value, pixmap):
+    if ui.image is not None:
+        ui.temperature = ()
+        ui.contrast = ()
+        ui.saturation = ()
+        ui.sharpness = ()
+        ui.highlights = ()
+        ui.brightness = ()
+        ui.labelShadows.setText('Shadows: {}'.format(value))
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
         apha = 1 - value / 100
-        if len(self.shadows) > 0:
+        if len(ui.shadows) > 0:
             pass
         else:
-            self.shadows += (image,)
-        im_output = self.shadows[0].point(lambda x: x * apha)
+            ui.shadows += (image,)
+        im_output = ui.shadows[0].point(lambda x: x * apha)
         pixmap_new = convertPILtoPixmap(im_output)
-        updateView(self, pixmap_new)
+        updateView(ui, pixmap_new)
 
 
-def onHightlightsChanged(self, value, pixmap):
-    if self.image is not None:
-        self.temperature = ()
-        self.contrast = ()
-        self.saturation = ()
-        self.sharpness = ()
-        self.shadows = ()
-        self.brightness = ()
-        self.labelHightlights.setText('Hightlights: {}'.format(value))
+def onHightlightsChanged(ui, value, pixmap):
+    if ui.image is not None:
+        ui.temperature = ()
+        ui.contrast = ()
+        ui.saturation = ()
+        ui.sharpness = ()
+        ui.shadows = ()
+        ui.brightness = ()
+        ui.labelHightlights.setText('Hightlights: {}'.format(value))
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
         apha = 1 + value / 100
-        if len(self.highlights) > 0:
+        if len(ui.highlights) > 0:
             pass
         else:
-            self.highlights += (image,)
-        im_output = self.highlights[0].point(lambda x: x * apha)
+            ui.highlights += (image,)
+        im_output = ui.highlights[0].point(lambda x: x * apha)
         # im_output = enhancer.enhance(apha)
         pixmap_new = convertPILtoPixmap(im_output)
-        updateView(self, pixmap_new)
+        updateView(ui, pixmap_new)
 
 
-def onSharpnessChanged(self, value, pixmap):
-    if self.image is not None:
-        self.temperature = ()
-        self.contrast = ()
-        self.saturation = ()
-        self.highlights = ()
-        self.shadows = ()
-        self.brightness = ()
-        self.labelSharpness.setText('Sharpness: {}'.format(value))
+def onSharpnessChanged(ui, value, pixmap):
+    if ui.image is not None:
+        ui.temperature = ()
+        ui.contrast = ()
+        ui.saturation = ()
+        ui.highlights = ()
+        ui.shadows = ()
+        ui.brightness = ()
+        ui.labelSharpness.setText('Sharpness: {}'.format(value))
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
         apha = 1 + value / 100
-        if len(self.sharpness) > 0:
+        if len(ui.sharpness) > 0:
             pass
         else:
-            self.sharpness += (image,)
-        enhancer = ImageEnhance.Sharpness(self.sharpness[0])
+            ui.sharpness += (image,)
+        enhancer = ImageEnhance.Sharpness(ui.sharpness[0])
         im_output = enhancer.enhance(apha)
         pixmap_new = convertPILtoPixmap(im_output)
-        updateView(self, pixmap_new)
+        updateView(ui, pixmap_new)
 
 
-def onSaturationChanged(self, value, pixmap):
-    if self.image is not None:
-        self.temperature = ()
-        self.contrast = ()
-        self.sharpness = ()
-        self.highlights = ()
-        self.shadows = ()
-        self.brightness = ()
-        self.labelSaturation.setText('Saturation: {}'.format(value))
+def onSaturationChanged(ui, value, pixmap):
+    if ui.image is not None:
+        ui.temperature = ()
+        ui.contrast = ()
+        ui.sharpness = ()
+        ui.highlights = ()
+        ui.shadows = ()
+        ui.brightness = ()
+        ui.labelSaturation.setText('Saturation: {}'.format(value))
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
         apha = 1 + value / 100
-        if len(self.saturation) > 0:
+        if len(ui.saturation) > 0:
             pass
         else:
-            self.saturation += (image,)
-        enhancer = ImageEnhance.Color(self.saturation[0])
+            ui.saturation += (image,)
+        enhancer = ImageEnhance.Color(ui.saturation[0])
         im_output = enhancer.enhance(apha)
         pixmap_new = convertPILtoPixmap(im_output)
-        updateView(self, pixmap_new)
+        updateView(ui, pixmap_new)
 
 
-def onContrastChanged(self, value, pixmap):
-    if self.image is not None:
-        self.temperature = ()
-        self.saturation = ()
-        self.sharpness = ()
-        self.highlights = ()
-        self.shadows = ()
-        self.brightness = ()
-        self.labelContrast.setText('Contrast: {}'.format(value))
+def onContrastChanged(ui, value, pixmap):
+    if ui.image is not None:
+        ui.temperature = ()
+        ui.saturation = ()
+        ui.sharpness = ()
+        ui.highlights = ()
+        ui.shadows = ()
+        ui.brightness = ()
+        ui.labelContrast.setText('Contrast: {}'.format(value))
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
         apha = 1 + value / 100
-        if len(self.contrast) > 0:
+        if len(ui.contrast) > 0:
             pass
         else:
-            self.contrast += (image,)
-        enhancer = ImageEnhance.Contrast(self.contrast[0])
+            ui.contrast += (image,)
+        enhancer = ImageEnhance.Contrast(ui.contrast[0])
         im_output = enhancer.enhance(apha)
         pixmap_new = convertPILtoPixmap(im_output)
-        updateView(self, pixmap_new)
+        updateView(ui, pixmap_new)
 
 
-def updateView(self, pixmap):
-    self.scene.clear()
-    self.scene.addPixmap(pixmap)
-    self.pixmap = pixmap
+def updateView(ui, pixmap):
+    ui.scene.clear()
+    ui.scene.addPixmap(pixmap)
+    ui.pixmap = pixmap
 
 
 def convertCVtoPixmap(rotated_image):

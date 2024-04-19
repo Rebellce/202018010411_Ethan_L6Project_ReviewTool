@@ -14,8 +14,7 @@ class ImageCropper(QMainWindow):
         super().__init__()
 
         #  init picture settings
-        self.detector = None
-        self.OCRSwitch = False
+
         self.scale = 1
         self.image = None
         self.painting = False
@@ -31,6 +30,9 @@ class ImageCropper(QMainWindow):
         self.initUI()
 
         #  init model
+        self.detectThread = None
+        self.detector = Detector()
+        self.OCRSwitch = False
         self.toolEdit()
         self.setupOCRTab()
         self.setupAITextTab()
@@ -428,9 +430,9 @@ class ImageCropper(QMainWindow):
                 self.buttonFromOCR.show()
             else:
                 self.buttonFromOCR.hide()
-            if self.detector is None:
+            if self.detector.initState is None:
                 self.onReloadModel()
-            elif self.detector is False:
+            elif self.detector.initState is False:
                 self.buttonAIStart.hide()
             else:
                 self.buttonAIStart.show()
@@ -547,15 +549,23 @@ class ImageCropper(QMainWindow):
 
     def onReloadModel(self):
         self.buttonAIStart.hide()
+        self.textEditAIText.setDisabled(True)
         self.detectResultLabel.clear()
-        try:
-            self.detector = Detector()
-        except Exception as e:
-            self.detector = False
-            self.detectResultLabel.setText(f"<font color='red'>Failed to load model..</font>")
+        self.detectResultLabel.setText("Loading model...Please ensure the network connected...")
+        self.detectThread = DetectThread(self.detector)
+        self.detectThread.start()
+        self.detectThread.finished.connect(self.loadModelResult)
+
+    def loadModelResult(self, _text="", errorFlag=False):
+        self.detectResultLabel.clear()
+        if errorFlag:
+            self.detectResultLabel.setText(formatError(_text))
+            self.detector.initState = False
             self.detectResultContent.hide()
             self.buttonReloadModel.show()
-        if self.detector:
-            self.detectResultLabel.setText(f"<font color='black'>The detection model is ready!</font>")
+        else:
+            self.detectResultLabel.setText(formatNormal(_text))
+            self.detector.initState = True
             self.buttonAIStart.show()
             self.buttonReloadModel.hide()
+        self.textEditAIText.setDisabled(False)
