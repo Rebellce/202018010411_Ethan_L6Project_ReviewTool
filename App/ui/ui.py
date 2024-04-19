@@ -278,7 +278,6 @@ class ImageCropper(QMainWindow):
         self.comboBoxInterface.addItem("Online Engine")
         _layout.addWidget(self.comboBoxInterface)
 
-        # self.buttonOCR = QPushButton("识别")
         self.buttonOCR = self._createToolBar('../icons/OCR.png', self.startOCR, "")
         _layout.addWidget(self.buttonOCR)
 
@@ -291,8 +290,6 @@ class ImageCropper(QMainWindow):
 
     def toolEdit(self):
         self.hbox = QVBoxLayout()
-        # self.labelT = QLabel("Temperature: 0")
-        # self._tool(self.labelT, self.onTemperatureChanged)
         self.labelContrast = QLabel("Contrast: 0")
         self._tool(self.labelContrast, self.onContrastChanged)
         # Saturation
@@ -310,7 +307,24 @@ class ImageCropper(QMainWindow):
         # Brightness
         self.labelBrightness = QLabel("Brightness: 0")
         self._tool(self.labelBrightness, self.onBrightnessChanged)
+
+        # Buttons
+        self.labelToolEditBtn = QLabel("Save changes?")
+        toolEditBtnLayout = QVBoxLayout()
+        self.toolEditBtnWidget = QWidget()
+        self.toolEditBtnWidget.setFixedHeight(100)
+        toolEditBtnLayout.addWidget(self.labelToolEditBtn)
+        self.toolEditBtnWidget.setLayout(toolEditBtnLayout)
+        self.hbox.addWidget(self.toolEditBtnWidget)
+        buttonLayout = QHBoxLayout()
+        toolEditBtnLayout.addLayout(buttonLayout)
+        self.toolEditConfirmBtn = self._createToolBar('../icons/check.png', self.startOCR, "")
+        self.toolEditCancelBtn = self._createToolBar('../icons/redo.png', self.startOCR, "")
+        buttonLayout.addWidget(self.toolEditConfirmBtn)
+        buttonLayout.addWidget(self.toolEditCancelBtn)
         self.tabEdit.setLayout(self.hbox)
+        self.toolEditBtnWidget.hide()
+
 
     def _tool(self, label, log):
         vbox = QVBoxLayout()
