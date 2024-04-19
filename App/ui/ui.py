@@ -37,6 +37,9 @@ class ImageCropper(QMainWindow):
         self.createToolBarV()
         self.initPaint()
 
+        # init threads
+        self.OCRThread = None
+
     def initPaint(self):
         self.drawing = False
         self.brushSize = 9

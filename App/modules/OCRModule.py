@@ -12,6 +12,7 @@ from imp import reload
 
 import time
 import json
+from PyQt5.QtCore import QThread, pyqtSignal
 
 reload(sys)
 YOUDAO_URL = 'https://openapi.youdao.com/ocrapi'
@@ -19,35 +20,68 @@ APP_KEY = '15aad6ef4101a19e'
 APP_SECRET = 'RUW1OIAOuMZ0wm3LIbnEdaRbOROrjq4y'
 
 
+class OCRThread(QThread):
+    finished = pyqtSignal(str, bool)
+    OCREngine = "local"
+    ui = None
+
+    def __init__(self, OCREngine, ui, parent=None):
+        super().__init__(parent)
+        self.OCREngine = OCREngine
+        self.ui = ui
+
+    def run(self):
+        print("OCRThread started")
+        if self.OCREngine == "local":
+            text, errorFlag = inThreadLocal(self.ui)
+            pass
+        elif self.OCREngine == "online":
+            text, errorFlag = inThreadOnline(self.ui)
+            pass
+        else:
+            assert False, "Unknown OCR engine"
+        self.finished.emit(text, errorFlag)
+
+
 def localOCR(self):
     self.textEditOCRResult.clear()
-    if self.image is not None:
-        self.view.activate = False
-        self.view.crop_rect = None
-        img = _getIMGObject(self.pixmap)
+    self.OCRThread = OCRThread("local", self)
+    self.OCRThread.finished.connect(lambda text, errorFlag: _finishOCR(self, text, errorFlag))
+    self.OCRThread.start()
+
+
+def inThreadLocal(ui):
+    if ui.image is not None:
+        ui.view.activate = False
+        ui.view.crop_rect = None
+        img = _getIMGObject(ui.pixmap)
         text = pytesseract.image_to_string(img, lang='eng')
+
         if text:
-            self.textEditOCRResult.setText(text)
-            self.OCRSwitch = True
-            return
+            errorFlag = False
+
         else:
-            self.textEditOCRResult.setHtml(formatError("No text recognized!"))
-            self.OCRSwitch = False
+            text = "No text recognized!"
+            errorFlag = True
     else:
-        self.textEditOCRResult.setHtml(formatError("No image to recognize!"))
-        self.OCRSwitch = False
-    self.buttonOCR.setDisabled(False)
-    self.comboBoxInterface.setDisabled(False)
+        text = "No image to recognize!"
+        errorFlag = True
+    return text, errorFlag
 
 
 def onlineOCR(self):
     self.textEditOCRResult.clear()
+    self.OCRThread = OCRThread("online", self)
+    self.OCRThread.finished.connect(lambda text, errorFlag: _finishOCR(self, text, errorFlag))
+    self.OCRThread.start()
 
-    if self.image is not None:
+
+def inThreadOnline(ui):
+    if ui.image is not None:
         try:
-            self.view.activate = False
-            self.view.crop_rect = None
-            q = _getBase64(self.pixmap)
+            ui.view.activate = False
+            ui.view.crop_rect = None
+            q = _getBase64(ui.pixmap)
             data = {'detectType': '10012',
                     'imageType': '1',
                     'langType': 'en',
@@ -72,35 +106,41 @@ def onlineOCR(self):
                     for line in region.get("lines", []):
                         text += line.get("text") + "\n"
                 if text:
-                    self.textEditOCRResult.setText(text)
-                    self.OCRSwitch = True
+                    errorFlag = False
                 else:
-                    self.textEditOCRResult.setHtml(formatError("No text recognized!"))
-                    self.OCRSwitch = False
+                    text = "No text recognized!"
+                    errorFlag = True
             else:
-                self.textEditOCRResult.setText("Online engine error, status code: " + str(response.status_code))
-                self.OCRSwitch = False
+                text = "Online engine error, status code: " + str(response.status_code)
+                errorFlag = True
 
         except requests.exceptions.RequestException as e:
-            error_message = "Network error: " + str(e)
-            self.textEditOCRResult.setHtml(formatError(error_message))
-            self.OCRSwitch = False
+            text = "Network error: " + str(e)
+            errorFlag = True
 
         except ValueError as e:
-            error_message = "Error processing the OCR results: " + str(e)
-            self.textEditOCRResult.setHtml(formatError(error_message))
-            self.OCRSwitch = False
+            text = "Error processing the OCR results: " + str(e)
+            errorFlag = True
 
         except Exception as e:
-            error_message = "An unexpected error occurred: " + str(e)
-            self.textEditOCRResult.setHtml(formatError(error_message))
-            self.OCRSwitch = False
-    else:
-        self.textEditOCRResult.setHtml(formatError("No image to recognize!"))
-        self.OCRSwitch = False
+            text = "An unexpected error occurred: " + str(e)
+            errorFlag = True
 
-    self.buttonOCR.setDisabled(False)
-    self.comboBoxInterface.setDisabled(False)
+    else:
+        text = "No image to recognize!"
+        errorFlag = True
+    return text, errorFlag
+
+
+def _finishOCR(ui, text="", errorFlag=False):
+    if errorFlag:
+        ui.textEditOCRResult.setHtml(formatError(text))
+        ui.OCRSwitch = False
+    else:
+        ui.textEditOCRResult.setHtml(formatNormal(text))
+        ui.OCRSwitch = True
+    ui.buttonOCR.setDisabled(False)
+    ui.comboBoxInterface.setDisabled(False)
 
 
 def _getIMGObject(pixmap):
@@ -148,3 +188,7 @@ def formatError(message):
 
     return f"<p style='color: red;'>{message}</p>"
 
+
+def formatNormal(message):
+    """Format the normal message with black color using HTML."""
+    return f"<p style='color: black;'>{message}</p>"
