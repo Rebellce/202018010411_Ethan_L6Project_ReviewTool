@@ -1,20 +1,26 @@
+import re
+
 from App.ui.myQGraphicsView import myQGraphicsView as myQGraphicsView
 
-from App.modules.fileModule import openIMGFile, saveIMGFile
+from App.modules.fileModule import openIMGFile, saveIMGFile, openAvatarFile
 from App.modules.imgModule import *
 from App.modules.textModule import *
 from App.modules.OCRModule import *
 from App.modules.detectionModule import *
-from App.ui.myGauge import myGaugeWidget
+from App.modules.userModule import *
 from App.ui.myLabelList import myLabelList
 
 
 class ImageCropper(QMainWindow):
+    EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    PASSWORD_PATTERN = re.compile(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,12}$')
+
     def __init__(self):
         super().__init__()
 
         #  init picture settings
 
+        self.userName = ""
         self.scale = 1
         self.image = None
         self.painting = False
@@ -25,22 +31,29 @@ class ImageCropper(QMainWindow):
         self.highlights = ()
         self.shadows = ()
         self.brightness = ()
+        self.pixmap = None
+        self.oldPixmap = None
 
         #  init user interface
         self.initUI()
 
         #  init model
-        self.detectThread = None
         self.detector = Detector()
-        self.OCRSwitch = False
         self.toolEdit()
         self.setupOCRTab()
         self.setupAITextTab()
+        self.initUserTab()
         self.createToolBarV()
         self.initPaint()
 
         # init threads
         self.OCRThread = None
+        self.detectThread = None
+
+        # init ui status
+        self.OCRSwitch = False  # this switch is used to control the OCR button in the AITextDetector tab
+        self.toolEditBtnSwitch = False  # this switch is used to control the tool edit button in the ImageEditor tab
+        self.initToolEditSwitch = False  # if set to True, when the edit slider value is changed, the picture will be not be updated
 
     def initPaint(self):
         self.drawing = False
@@ -84,16 +97,24 @@ class ImageCropper(QMainWindow):
         self.tabEdit = QWidget()
         self.tabOCR = QWidget()
         self.tabAIText = QWidget()
+        self.tabUser = QWidget()
         # No need to set fixed width for the tabFilter, it will be managed by splitter
 
         self.tabs.addTab(self.tabEdit, 'ImageEditor')
         self.tabs.addTab(self.tabOCR, 'OCRTool')
-        self.tabs.addTab(self.tabAIText, 'AITextDetector')
-
-        # Add the tabs widget to the splitter
-        self.splitter.addWidget(self.tabs)
+        self.tabs.addTab(self.tabAIText, 'AITool')
+        self.tabs.addTab(self.tabUser, 'User')
+        self.tabs.setTabVisible(0, False)
         self.tabs.currentChanged.connect(self.onTabChanged)
 
+        # Create a widget for user information
+        self.userWidget = QWidget()
+        # Add the tabs widget to the splitter
+        rightSplitter = QSplitter(Qt.Vertical)
+        rightSplitter.addWidget(self.tabs)
+        rightSplitter.setCollapsible(0, False)
+        rightSplitter.addWidget(self.userWidget)
+        self.splitter.addWidget(rightSplitter)
         # Add the splitter to the main layout
         self.layout.addWidget(self.splitter)
 
@@ -115,7 +136,231 @@ class ImageCropper(QMainWindow):
         self.dentaY = self.editToolBarH.height()
         self.show()
 
+    #  ====================  User Module Functions ====================
+    def initUserTab(self):
+        self.userTablayout = QVBoxLayout()
+        self.tabUser.setLayout(self.userTablayout)
+        self.userTabLabel = QLabel("")
+        self.userTabLabel.setFixedHeight(25)
+        self.userTablayout.addWidget(self.userTabLabel)
+        self.initUserMini()
+        self.initLogin()
+        self.initRegister()
+
+        self.registerWidget.hide()
+        self.userTabLabel.setText("Login:")
+
+    def initUserMini(self):
+        self.userWidget.setFixedHeight(80)
+        self.userName = "Ethan Zhu"
+        filePath = "../icons/avatar.png"
+        self.userLayout = QHBoxLayout()
+        self.userLabelLayoutV = QVBoxLayout()
+        self.userLabelWidgetV = QWidget()
+        self.userLabelLayoutV.setContentsMargins(0, 0, 0, 0)  # Set all margins to zero
+        self.userLabelLayoutV.setSpacing(0)  # Set spacing to zero
+
+        self.userLabelWidgetV.setLayout(self.userLabelLayoutV)
+        self.userLabel = QLabel(f"Hello, {self.userName}")
+        self.userLabel.setWordWrap(True)
+        self.userLabel.setFixedHeight(40)
+
+        self.avatar = QLabel()
+        self.avatar.setFixedSize(50, 50)
+        self.avatar.setStyleSheet(f"""
+            QLabel {{
+                border-radius: 25px;  
+            border: 2px solid black;
+            background-image: url('{filePath}');
+            background-position: center;
+            background-repeat: no-repeat;
+            }}
+        """)
+        self.avatar.mousePressEvent = self.openAvatarFile
+        self.userLayout.addWidget(self.avatar)
+        self.userLayout.addWidget(self.userLabelWidgetV)
+        self.userLabelLayoutV.addWidget(self.userLabel)
+        self.userWidget.setLayout(self.userLayout)
+        self.userWidget.mousePressEvent = self.jumpToUserTab
+
+    def jumpToUserTab(self, event):
+        self.tabs.setCurrentIndex(3)
+
+    def jumpToRegister(self, event):
+        self.userLabMainSplitter.hide()
+        self.userTabLabel.setText("Register:")
+        self.registerWidget.show()
+
+    def jumpToLogin(self, event):
+        self.registerWidget.hide()
+        self.userTabLabel.setText("Login:")
+        self.userLabMainSplitter.show()
+
+
+    def initRegister(self):
+        self.regPromptBoxes = {}
+        self.registerWidget = QWidget()
+        mainLayout = QVBoxLayout()
+
+        self.firstNameInput = QLineEdit()
+        self.firstNameInput.setMaxLength(20)
+        self.firstNameInput.setPlaceholderText("Enter first name..")
+        self.createLineEdit("First Name:", self.firstNameInput, mainLayout, self.regPromptBoxes)
+
+        self.lastNameInput = QLineEdit()
+        self.lastNameInput.setMaxLength(20)
+        self.lastNameInput.setPlaceholderText("Enter last name..")
+        self.createLineEdit("Last Name:", self.lastNameInput, mainLayout, self.regPromptBoxes)
+
+        self.emailInput = QLineEdit()
+        self.emailInput.setMaxLength(50)
+        self.emailInput.setPlaceholderText("Enter email..")
+        self.createLineEdit("Email:", self.emailInput, mainLayout, self.regPromptBoxes)
+
+        self.passwordInput = QLineEdit()
+        self.passwordInput.setEchoMode(QLineEdit.Password)
+        self.passwordInput.setMaxLength(20)
+        self.passwordInput.setPlaceholderText("Enter password..")
+        self.createLineEdit("Password:", self.passwordInput, mainLayout, self.regPromptBoxes)
+
+        self.confirmPasswordInput = QLineEdit()
+        self.confirmPasswordInput.setEchoMode(QLineEdit.Password)
+        self.confirmPasswordInput.setMaxLength(20)
+        self.confirmPasswordInput.setPlaceholderText("Confirm password..")
+        self.createLineEdit("Confirm Password:", self.confirmPasswordInput, mainLayout, self.regPromptBoxes)
+
+        buttonsLayout = QHBoxLayout()
+        self.registerButton = QPushButton("OK")
+        self.registerButton.clicked.connect(self.onRegister)
+        self.cancelButton = QPushButton("Cancel")
+        self.cancelButton.clicked.connect(self.jumpToLogin)
+        buttonsLayout.addWidget(self.registerButton)
+        buttonsLayout.addWidget(self.cancelButton)
+        mainLayout.addLayout(buttonsLayout)
+
+        self.registerWidget.setLayout(mainLayout)
+        self.userTablayout.addWidget(self.registerWidget)
+
+    def initLogin(self):
+        self.loginPromptBoxes = {}
+        self.loginWidget = QWidget()
+
+
+        self.userLabMainSplitter = QSplitter(Qt.Vertical)
+
+        loginLayout = QVBoxLayout()
+        loginWidget = QWidget()
+        loginWidget.setLayout(loginLayout)
+        self.loginEmailInput = QLineEdit()
+        self.loginEmailInput.setMaxLength(50)
+        self.loginEmailInput.setPlaceholderText("Enter email..")
+        self.createLineEdit("Email:", self.loginEmailInput, loginLayout, self.loginPromptBoxes)
+        self.loginPasswordInput = QLineEdit()
+        self.loginPasswordInput.setEchoMode(QLineEdit.Password)
+        self.loginPasswordInput.setMaxLength(20)
+        self.loginPasswordInput.setPlaceholderText("Enter password..")
+        self.createLineEdit("Password:", self.loginPasswordInput, loginLayout, self.loginPromptBoxes)
+
+        buttonsLayout = QVBoxLayout()
+        self.loginButton = QPushButton("login")
+
+        gotoRegisterLabel = QLabel("new comers? go to register")
+        gotoRegisterLabel.setStyleSheet("""
+                color:gray;
+                font-family:黑体; 
+                font-size:10pt; 
+                text-decoration: underline;
+        """)
+        gotoRegisterLabel.setAlignment(Qt.AlignCenter)
+        gotoRegisterLabel.mousePressEvent = self.jumpToRegister
+
+        buttonsLayout.addWidget(self.loginButton)
+        buttonsLayout.addWidget(gotoRegisterLabel)
+        loginLayout.addLayout(buttonsLayout)
+
+        infoLayout = QHBoxLayout()
+        infoWidget = QWidget()
+        infoWidget.setLayout(infoLayout)
+        infoLayout.addWidget(QLabel("This part is for test"))
+
+        self.userLabMainSplitter.addWidget(loginWidget)
+        self.userLabMainSplitter.addWidget(infoWidget)
+        self.userLabMainSplitter.setCollapsible(0, False)
+        self.userLabMainSplitter.setCollapsible(1, False)
+        self.userLabMainSplitter.setSizes([500, 2000])
+
+        self.userTablayout.addWidget(self.userLabMainSplitter)
+
+    def createLineEdit(self, label, lineEdit, mainLayout, promptBoxes):
+        promptLabel = QLabel()
+        promptLabel.setStyleSheet("color:red; font-family:黑体; font-size:11pt;")
+        promptLabel.setText("")
+        promptBoxes[lineEdit] = promptLabel
+        lineEdit.mousePressEvent = self.initRegPrompt
+        layout = QVBoxLayout()
+        widget = QWidget()
+        widget.setFixedHeight(100)
+        widget.setContentsMargins(0, 0, 0, 0)
+        widget.setLayout(layout)
+        layout.addWidget(QLabel(label))
+        layout.addWidget(lineEdit)
+        layout.addWidget(promptLabel)
+        mainLayout.addWidget(widget)
+
+    def setPrompt(self, lineEdit, label, promptBoxes):
+        promptBoxes[lineEdit].setText(label)
+
+    def initRegPrompt(self, event):
+        for lineEdit, prompt in self.regPromptBoxes.items():
+            self.setPrompt(lineEdit, "", self.regPromptBoxes)
+
+    def onRegister(self):
+        for lineEdit, prompt in self.regPromptBoxes.items():
+            if not lineEdit.text():
+                self.setPrompt(lineEdit, "This field is required.", self.regPromptBoxes)
+                return
+        if not self.validateEmail(self.emailInput.text()):
+            self.regPromptBoxes[self.emailInput].setText("Invalid email address.")
+            return
+        result = self.validatePassword(self.passwordInput.text())
+        if result != "":
+            self.regPromptBoxes[self.passwordInput].setText(result)
+            return
+        if self.passwordInput.text() != self.confirmPasswordInput.text():
+            self.setPrompt(self.confirmPasswordInput, "Passwords do not match.", self.regPromptBoxes)
+            return
+        self.sendRegisterRequest()
+
+    def validateEmail(self, email):
+        if not self.EMAIL_PATTERN.match(email):
+            return False
+        return True
+
+    def validatePassword(self, password):
+        if len(password) < 6:
+            return "Least 6 characters long."
+        elif len(password) > 12:
+            return "Most 12 characters long."
+        elif not self.PASSWORD_PATTERN.match(password):
+            return "Need letters & numbers."
+        else:
+            return ""
+
+    def sendRegisterRequest(self):
+        self.tabUser.setDisabled(True)
+
     #   ====================  File Module Functions ====================
+    def openAvatarFile(self, event):
+        if openAvatarFile(self):
+            self.avatar.setStyleSheet(f"""
+                QLabel {{
+                    border-radius: 25px;  
+                border: 2px solid black;
+                background-image: url('../icons/avatar.png');
+                background-position: center;
+                background-repeat: no-repeat;
+                }}
+            """)
 
     def openfile(self):
         self.painting = False
@@ -182,10 +427,21 @@ class ImageCropper(QMainWindow):
     def undoRotation(self):
         undoRotation(self)
 
+    def confirmRotation(self):
+        confirmRotation(self)
+
+    def edit(self):
+        edit(self)
+
+    def undoEdit(self):
+        undoEdit(self)
+
     #   ====================  Text Module Functions ====================
     def text(self):
         self.painting = False
-        text(self)
+        if self.image is not None:
+            initEditTool(self)
+            text(self)
 
     def buttonClickToSetText(self):
         buttonClickToSetText(self)
@@ -247,11 +503,13 @@ class ImageCropper(QMainWindow):
         controlWidget.setLayout(controlLayout)
         self.buttonFromOCR.hide()
         self.buttonAIStart.hide()
+        self.buttonReloadModel.hide()
 
         self.detectResultWidget = QWidget()
         self.detectResultLayout = QVBoxLayout()
         self.detectResultLayout.setContentsMargins(0, 0, 0, 0)
         self.detectResultLabel = QLabel()
+        self.detectResultLabel.setWordWrap(True)
         self.detectResultLayout.addWidget(self.detectResultLabel)
         self.detectResultContent = myLabelList()
         self.detectResultWidget.setLayout(self.detectResultLayout)
@@ -289,55 +547,53 @@ class ImageCropper(QMainWindow):
         self.tabOCR.setLayout(ocrLayout)
 
     def toolEdit(self):
+        self.adjustments = {
+            'brightness': onBrightnessChanged,
+            'shadows': onShadowsChanged,
+            'highlights': onHightlightsChanged,
+            'sharpness': onSharpnessChanged,
+            'saturation': onSaturationChanged,
+            'contrast': onContrastChanged
+        }
+        self.sliderList = []
         self.hbox = QVBoxLayout()
         self.labelContrast = QLabel("Contrast: 0")
-        self._tool(self.labelContrast, self.onContrastChanged)
+        self._tool(self.labelContrast, 'contrast')
         # Saturation
         self.labelSaturation = QLabel("Saturation: 0")
-        self._tool(self.labelSaturation, self.onSaturationChanged)
+        self._tool(self.labelSaturation, 'saturation')
         # Exposure
         self.labelSharpness = QLabel("Sharpness: 0")
-        self._tool(self.labelSharpness, self.onSharpnessChanged)
+        self._tool(self.labelSharpness, 'sharpness')
         # Hightlights
         self.labelHightlights = QLabel("Hightlights: 0")
-        self._tool(self.labelHightlights, self.onHightlightsChanged)
+        self._tool(self.labelHightlights, 'highlights')
         # Shadows
         self.labelShadows = QLabel("Shadows: 0")
-        self._tool(self.labelShadows, self.onShadowsChanged)
+        self._tool(self.labelShadows, 'shadows')
         # Brightness
         self.labelBrightness = QLabel("Brightness: 0")
-        self._tool(self.labelBrightness, self.onBrightnessChanged)
-
-        # Buttons
-        self.labelToolEditBtn = QLabel("Save changes?")
-        toolEditBtnLayout = QVBoxLayout()
-        self.toolEditBtnWidget = QWidget()
-        self.toolEditBtnWidget.setFixedHeight(100)
-        toolEditBtnLayout.addWidget(self.labelToolEditBtn)
-        self.toolEditBtnWidget.setLayout(toolEditBtnLayout)
-        self.hbox.addWidget(self.toolEditBtnWidget)
-        buttonLayout = QHBoxLayout()
-        toolEditBtnLayout.addLayout(buttonLayout)
-        self.toolEditConfirmBtn = self._createToolBar('../icons/check.png', self.startOCR, "")
-        self.toolEditCancelBtn = self._createToolBar('../icons/redo.png', self.startOCR, "")
-        buttonLayout.addWidget(self.toolEditConfirmBtn)
-        buttonLayout.addWidget(self.toolEditCancelBtn)
+        self._tool(self.labelBrightness, 'brightness')
         self.tabEdit.setLayout(self.hbox)
-        self.toolEditBtnWidget.hide()
 
-
-    def _tool(self, label, log):
+    def _tool(self, label, adjustment, log=None):
+        if log is None:
+            log = self.onAdjustmentChanged
         vbox = QVBoxLayout()
         widgetT = QWidget()
         widgetT.setFixedHeight(100)
         sliderTem = QSlider(Qt.Horizontal)
+        self.sliderList.append(sliderTem)
         sliderTem.setMinimum(-100)
         sliderTem.setMaximum(100)
-        sliderTem.valueChanged.connect(log)
+        sliderTem.valueChanged.connect(lambda value: log(adjustment, value))
         vbox.addWidget(label)
         vbox.addWidget(sliderTem)
         widgetT.setLayout(vbox)
         self.hbox.addWidget(widgetT)
+
+    def initEditTool(self):
+        initEditTool(self)
 
     def superResolution(self):
         if self.image is not None:
@@ -437,7 +693,7 @@ class ImageCropper(QMainWindow):
             canvasPainter.drawPixmap(self.rect(), self.pixmap, self.pixmap.rect())
 
     def onTabChanged(self, index):
-        if self.tabs.tabText(index) == 'AITextDetector':
+        if self.tabs.tabText(index) == 'AITool':
             # self.myGaugeWidget1.refreshGauge()
             # self.myGaugeWidget2.refreshGauge()
             if self.OCRSwitch:
@@ -460,35 +716,18 @@ class ImageCropper(QMainWindow):
         color = QColorDialog.getColor()
         self.brushColor = color
 
-    def onBrightnessChanged(self, value):
-        if self.image is not None:
-            self.painting = False
-            onBrightnessChanged(self, value, self.pixmap)
+    def onAdjustmentChanged(self, adjustment, value):
 
-    def onShadowsChanged(self, value):
         if self.image is not None:
             self.painting = False
-            onShadowsChanged(self, value, self.pixmap)
-
-    def onHightlightsChanged(self, value):
-        if self.image is not None:
-            self.painting = False
-            onHightlightsChanged(self, value, self.pixmap)
-
-    def onSharpnessChanged(self, value):
-        if self.image is not None:
-            self.painting = False
-            onSharpnessChanged(self, value, self.pixmap)
-
-    def onSaturationChanged(self, value):
-        if self.image is not None:
-            self.painting = False
-            onSaturationChanged(self, value, self.pixmap)
-
-    def onContrastChanged(self, value):
-        if self.image is not None:
-            self.painting = False
-            onContrastChanged(self, value, self.pixmap)
+            function = self.adjustments.get(adjustment)
+            if function:
+                function(self, value, self.pixmap)
+                if not self.toolEditBtnSwitch:
+                    showEditTools(self)
+                    self.toolEditBtnSwitch = True
+            else:
+                assert False, "Adjustment type not recognized"
 
     def createToolBarV(self):
         self.buttonOpen = self._createToolBar('../icons/plus.png', self.openfile, "Ctrl+O")
@@ -501,9 +740,10 @@ class ImageCropper(QMainWindow):
         self.buttonResize = self._createToolBar('../icons/resize.png', self.resize, "Ctrl+P")
         self.buttonRotate = self._createToolBar('../icons/rotate.png', self.rotate, "Ctrl+R")
         self.buttonText = self._createToolBar('../icons/text.png', self.text, "Ctrl+T")
+        self.buttonToolEdit = self._createToolBar('../icons/Colorful.png', self.edit, "Ctrl+E")
         self.listTool = [self.buttonOpen, self.buttonSave, self.buttonZoomIn, self.buttonZoomOut, self.buttonCrop,
                          self.buttonFlipH, self.buttonFlipV, \
-                         self.buttonResize, self.buttonRotate, self.buttonText]
+                         self.buttonResize, self.buttonRotate, self.buttonText, self.buttonToolEdit]
         for bt in self.listTool:
             bt.clicked.connect(self.button_clicked)
 

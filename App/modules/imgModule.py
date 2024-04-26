@@ -7,21 +7,83 @@ from PIL import Image, ImageEnhance
 import cv2
 import numpy as np
 
+from App.ui.ui import ImageCropper
 
-def zoomIn(ui):
+
+def initEditTool(ui: ImageCropper):
+    index = ui.tabs.indexOf(ui.tabEdit)
+    if index != -1:
+        ui.tabs.tabBar().setTabVisible(index, False)
+    else:
+        assert False, 'Tab not found'
+    ui.toolEditBtnSwitch = False
+    updateView(ui, ui.oldPixmap)
+    # ui.oldPixmap = ui.pixmap.copy()
+    ui.initToolEditSwitch = True
+    for slider in ui.sliderList:
+        if slider.value() != 0:
+            slider.setValue(0)
+    ui.initToolEditSwitch = False
     ui.editToolBarH.clear()
     ui.view.activate = False
     ui.view.crop_rect = None
-    ui.scale = 1.1
-    ui.actionZoom()
+
+
+def edit(ui: ImageCropper):
+    if ui.image is not None:
+        initEditTool(ui)
+        index = ui.tabs.indexOf(ui.tabEdit)
+        if index != -1:
+            ui.tabs.tabBar().setTabVisible(index, True)
+            ui.tabs.setCurrentIndex(index)
+
+
+def showEditTools(ui: ImageCropper):
+    # Buttons
+    toolEditLabel = QLabel("Save changes?")
+    toolEditConfirmBtn = QToolButton()
+    toolEditConfirmBtn.clicked.connect(ui.undoEdit)
+    toolEditConfirmBtn.setIcon(QIcon('../icons/check.png'))
+
+    toolEditCancelBtn = QToolButton()
+    toolEditCancelBtn.clicked.connect(ui.undoEdit)
+    toolEditCancelBtn.setIcon(QIcon('../icons/undo.png'))
+    left_spacer = QWidget()
+    left_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+    right_spacer = QWidget()
+    right_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+    widget = QWidget()
+    layout = QHBoxLayout()
+    layout.addWidget(toolEditLabel)
+    layout.addWidget(toolEditConfirmBtn)
+    layout.addWidget(toolEditCancelBtn)
+    layout.setSpacing(20)
+    widget.setLayout(layout)
+    ui.editToolBarH.addWidget(left_spacer)
+    ui.editToolBarH.addWidget(widget)
+    ui.editToolBarH.addWidget(right_spacer)
+
+
+def undoEdit(ui: ImageCropper):
+    ui.scene.clear()
+    ui.pixmap = ui.oldPixmap.copy()
+    ui.scene.addPixmap(ui.pixmap)
+    ui.scene.update()
+
+
+def zoomIn(ui):
+    if ui.image is not None:
+        initEditTool(ui)
+        ui.scale = 1.1
+        ui.actionZoom()
 
 
 def zoomOut(ui):
-    ui.editToolBarH.clear()
-    ui.view.activate = False
-    ui.view.crop_rect = None
-    ui.scale = 0.9
-    ui.actionZoom()
+    if ui.image is not None:
+        initEditTool(ui)
+        ui.scale = 0.9
+        ui.actionZoom()
 
 
 def actionZoom(ui):
@@ -32,8 +94,11 @@ def actionZoom(ui):
 def crop(ui):
     # self = crop(self)
     if ui.buttonCrop.isChecked and ui.image is not None:
-        ui.editToolBarH.clear()
+        initEditTool(ui)
+
         ui.view.activate = True
+        labelCrop = QLabel()
+        labelCrop.setText('Crop the image?  ')
         buttonCrop = QToolButton()
         buttonCrop.setText('OK')
         buttonCrop.setAutoRaise(True)
@@ -44,6 +109,7 @@ def crop(ui):
         right_spacer = QWidget()
         right_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         ui.editToolBarH.addWidget(left_spacer)
+        ui.editToolBarH.addWidget(labelCrop)
         ui.editToolBarH.addWidget(buttonCrop)
         ui.editToolBarH.addWidget(right_spacer)
 
@@ -66,29 +132,33 @@ def cropClicked(ui):
         ui.scene.setSceneRect(0, 0, ui.pixmap.width(), ui.pixmap.height())
         ui.scene.addPixmap(ui.pixmap)
         ui.scene.update()
+        ui.oldPixmap = ui.pixmap.copy()
 
 
 def resize(ui):
     if ui.image is not None:
-        ui.editToolBarH.clear()
-        ui.view.activate = False
-        ui.view.crop_rect = None
+        initEditTool(ui)
         window = QWidget()
         width = QLabel()
         width.setText('Width:')
         height = QLabel()
         height.setText('Height:')
         ui.spinBoxW = QSpinBox()
-        ui.spinBoxW.setMinimum(100)
-        ui.spinBoxW.setMaximum(2100)
+        ui.spinBoxW.setMinimum(10)
+        ui.spinBoxW.setMaximum(1000)
         ui.spinBoxW.setSingleStep(1)
         ui.spinBoxW.setValue(100)
+        ui.spinBoxW.setSuffix("%")
+        ui.spinBoxW.valueChanged.connect(lambda: previewResize(ui))
 
         ui.spinBoxH = QSpinBox()
-        ui.spinBoxH.setMinimum(100)
-        ui.spinBoxH.setMaximum(2100)
+        ui.spinBoxH.setMinimum(10)
+        ui.spinBoxH.setMaximum(1000)
         ui.spinBoxH.setSingleStep(1)
         ui.spinBoxH.setValue(100)
+        ui.spinBoxH.setSuffix("%")
+        ui.spinBoxH.valueChanged.connect(lambda: previewResize(ui))
+
         button_action = QAction(ui)
         button_action.setIcon(QIcon('../icons/check.png'))
         button_action.triggered.connect(ui.buttonClickToResize)
@@ -104,12 +174,18 @@ def resize(ui):
 
 
 def buttonClickToResize(ui):
+    ui.oldPixmap = ui.pixmap.copy()
+
+
+def previewResize(ui):
     if ui.spinBoxW.value() is not None and ui.spinBoxH.value() is not None:
-        width = ui.spinBoxW.value()
-        height = ui.spinBoxH.value()
-        ui.pixmap = ui.pixmap.scaled(QSize(width, height), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
-        ui.scene.clear()  # Clear the scene
-        ui.scene.setSceneRect(0, 0, ui.pixmap.width(), ui.pixmap.height())
+        widthPercent = ui.spinBoxW.value() / 100.0
+        heightPercent = ui.spinBoxH.value() / 100.0
+        width = int(ui.oldPixmap.width() * widthPercent)
+        height = int(ui.oldPixmap.height() * heightPercent)
+        ui.pixmap = ui.oldPixmap.scaled(QSize(width, height), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+        ui.scene.clear()
+        ui.scene.setSceneRect(0, 0,  ui.pixmap.width(),  ui.pixmap.height())
         ui.scene.addPixmap(ui.pixmap)
         ui.scene.update()
 
@@ -126,24 +202,22 @@ def flipV(ui):
 
 def flip(ui, scale: tuple):
     if ui.image is not None:
-        ui.editToolBarH.clear()
-        ui.view.activate = False
-        ui.view.crop_rect = None
+        initEditTool(ui)
         ui.pixmap = ui.pixmap.transformed(QTransform().scale(scale[0], scale[1]))
         ui.pixmap = ui.pixmap.copy()
         ui.scene.setSceneRect(0, 0, ui.pixmap.width(), ui.pixmap.height())
         ui.scene.clear()
         ui.scene.addPixmap(ui.pixmap)
         ui.scene.update()
+        ui.oldPixmap = ui.pixmap.copy()
 
 
 def rotate(ui):
     if ui.image is not None:
         ui.original_pixmap = ui.pixmap.copy()
         ui.pixmap_ = ui.pixmap.copy()
-        ui.editToolBarH.clear()
-        ui.view.activate = False
-        ui.view.crop_rect = None
+        initEditTool(ui)
+
         ui.slider = QSlider(Qt.Horizontal, ui)
         ui.slider.setMinimum(-180)
         ui.slider.setMaximum(180)
@@ -159,6 +233,9 @@ def rotate(ui):
         buttonUndoRotation = QToolButton()
         buttonUndoRotation.clicked.connect(ui.undoRotation)
         buttonUndoRotation.setIcon(QIcon('../icons/undo.png'))
+        buttonConfirmRotation = QToolButton()
+        buttonConfirmRotation.clicked.connect(ui.confirmRotation)
+        buttonConfirmRotation.setIcon(QIcon('../icons/check.png'))
         window = QWidget()
         toolBarH = QHBoxLayout()
         toolBarH.setSizeConstraint(QLayout.SetFixedSize)
@@ -166,6 +243,7 @@ def rotate(ui):
         toolBarH.addWidget(buttonRotateR)
         toolBarH.addWidget(ui.slider)
         toolBarH.addWidget(buttonUndoRotation)
+        toolBarH.addWidget(buttonConfirmRotation)
         window.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         window.setLayout(toolBarH)
         left_spacer = QWidget()
@@ -216,25 +294,27 @@ def rotateImage90L(ui):
     ui.scene.update()
 
 
-def undoRotation(ui):
-    if hasattr(ui, 'original_pixmap'):
-        ui.slider.setValue(0)
-        pixmap = ui.original_pixmap  # 恢复原始状态
-        ui.scene.clear()
-        ui.scene.setSceneRect(0, 0, pixmap.width(), pixmap.height())
-        ui.scene.addPixmap(pixmap)
-        ui.scene.update()
+def undoRotation(ui: ImageCropper):
+    ui.slider.setValue(0)
+    ui.scene.clear()
+    ui.scene.addPixmap(ui.oldPixmap)
+    ui.scene.update()
+
+
+def confirmRotation(ui: ImageCropper):
+    ui.oldPixmap = ui.pixmap.copy()
 
 
 def onBrightnessChanged(ui, value, pixmap):
-    if ui.image is not None:
+    ui.labelBrightness.setText('Brightness: {}'.format(value))
+    if ui.image is not None and ui.initToolEditSwitch is False:
         ui.temperature = ()
         ui.contrast = ()
         ui.saturation = ()
         ui.sharpness = ()
         ui.highlights = ()
         ui.shadows = ()
-        ui.labelBrightness.setText('Brightness: {}'.format(value))
+
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
@@ -250,14 +330,14 @@ def onBrightnessChanged(ui, value, pixmap):
 
 
 def onShadowsChanged(ui, value, pixmap):
-    if ui.image is not None:
+    ui.labelShadows.setText('Shadows: {}'.format(value))
+    if ui.image is not None and ui.initToolEditSwitch is False:
         ui.temperature = ()
         ui.contrast = ()
         ui.saturation = ()
         ui.sharpness = ()
         ui.highlights = ()
         ui.brightness = ()
-        ui.labelShadows.setText('Shadows: {}'.format(value))
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
@@ -272,14 +352,14 @@ def onShadowsChanged(ui, value, pixmap):
 
 
 def onHightlightsChanged(ui, value, pixmap):
-    if ui.image is not None:
+    ui.labelHightlights.setText('Hightlights: {}'.format(value))
+    if ui.image is not None and ui.initToolEditSwitch is False:
         ui.temperature = ()
         ui.contrast = ()
         ui.saturation = ()
         ui.sharpness = ()
         ui.shadows = ()
         ui.brightness = ()
-        ui.labelHightlights.setText('Hightlights: {}'.format(value))
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
@@ -295,14 +375,14 @@ def onHightlightsChanged(ui, value, pixmap):
 
 
 def onSharpnessChanged(ui, value, pixmap):
-    if ui.image is not None:
+    ui.labelSharpness.setText('Sharpness: {}'.format(value))
+    if ui.image is not None and ui.initToolEditSwitch is False:
         ui.temperature = ()
         ui.contrast = ()
         ui.saturation = ()
         ui.highlights = ()
         ui.shadows = ()
         ui.brightness = ()
-        ui.labelSharpness.setText('Sharpness: {}'.format(value))
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
@@ -318,14 +398,14 @@ def onSharpnessChanged(ui, value, pixmap):
 
 
 def onSaturationChanged(ui, value, pixmap):
-    if ui.image is not None:
+    ui.labelSaturation.setText('Saturation: {}'.format(value))
+    if ui.image is not None and ui.initToolEditSwitch is False:
         ui.temperature = ()
         ui.contrast = ()
         ui.sharpness = ()
         ui.highlights = ()
         ui.shadows = ()
         ui.brightness = ()
-        ui.labelSaturation.setText('Saturation: {}'.format(value))
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
@@ -341,14 +421,14 @@ def onSaturationChanged(ui, value, pixmap):
 
 
 def onContrastChanged(ui, value, pixmap):
-    if ui.image is not None:
+    ui.labelContrast.setText('Contrast: {}'.format(value))
+    if ui.image is not None and ui.initToolEditSwitch is False:
         ui.temperature = ()
         ui.saturation = ()
         ui.sharpness = ()
         ui.highlights = ()
         ui.shadows = ()
         ui.brightness = ()
-        ui.labelContrast.setText('Contrast: {}'.format(value))
         image = converPixmapToCV(pixmap)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)

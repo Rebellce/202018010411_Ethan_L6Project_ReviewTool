@@ -48,16 +48,23 @@ class Detector:
         ImageCropper.buttonFromOCR.setDisabled(True)
         ImageCropper.buttonAIStart.setDisabled(True)
         ImageCropper.buttonReloadModel.setDisabled(True)
+        ImageCropper.detectResultLabel.clear()
+        ImageCropper.detectResultLabel.setText("Detecting...")
 
         text = ImageCropper.textEditAIText.toPlainText()
-        paragraphs = text.split('\n')
-        paragraphs = [para for para in paragraphs if para.strip() != '']
-        results = []
-        for para in paragraphs:
-            result = self._detect(para)
-            results.append(result)
-            hover_text = f"Detection Result: {result['type']}, Level: {result['lvl']}"
-        ImageCropper.detectResultContent.reloadContent(results)
+        if text:
+            paragraphs = text.split('\n')
+            paragraphs = [para for para in paragraphs if para.strip() != '']
+            results = []
+            for para in paragraphs:
+                result = self._detect(para)
+                results.append(result)
+                hover_text = f"Detection Result: {result['type']}, Level: {result['lvl']}"
+            ImageCropper.detectResultContent.reloadContent(results)
+            ImageCropper.detectResultLabel.clear()
+        else:
+            ImageCropper.detectResultLabel.setText("No text detected.")
+
         ImageCropper.textEditAIText.setDisabled(False)
         ImageCropper.buttonFromOCR.setDisabled(False)
         ImageCropper.buttonAIStart.setDisabled(False)

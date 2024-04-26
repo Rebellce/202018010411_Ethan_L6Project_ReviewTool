@@ -1,3 +1,4 @@
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
 import sys
 # import os
@@ -9,6 +10,8 @@ from ui.ui import ImageCropper
 
 
 if __name__ == "__main__":
+    # QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    # QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
     app = QApplication(sys.argv)
     win = ImageCropper()
     win.show()
