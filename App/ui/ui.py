@@ -20,6 +20,7 @@ class ImageCropper(QMainWindow):
 
         #  init picture settings
 
+        self.user = UserModule()
         self.userName = ""
         self.scale = 1
         self.image = None
@@ -138,17 +139,19 @@ class ImageCropper(QMainWindow):
 
     #  ====================  User Module Functions ====================
     def initUserTab(self):
+        self.user.initUser(self)
         self.userTablayout = QVBoxLayout()
         self.tabUser.setLayout(self.userTablayout)
         self.userTabLabel = QLabel("")
-        self.userTabLabel.setFixedHeight(25)
+        self.userTabLabel.setFixedHeight(40)
+        self.userTabLabel.setWordWrap(True)
         self.userTablayout.addWidget(self.userTabLabel)
+        self.userTablayout.setContentsMargins(5, 0, 5, 0)
         self.initUserMini()
         self.initLogin()
         self.initRegister()
-
-        self.registerWidget.hide()
-        self.userTabLabel.setText("Login:")
+        self.initUserMain()
+        self.jumpToLogin(None)
 
     def initUserMini(self):
         self.userWidget.setFixedHeight(80)
@@ -182,20 +185,7 @@ class ImageCropper(QMainWindow):
         self.userLabelLayoutV.addWidget(self.userLabel)
         self.userWidget.setLayout(self.userLayout)
         self.userWidget.mousePressEvent = self.jumpToUserTab
-
-    def jumpToUserTab(self, event):
-        self.tabs.setCurrentIndex(3)
-
-    def jumpToRegister(self, event):
-        self.userLabMainSplitter.hide()
-        self.userTabLabel.setText("Register:")
-        self.registerWidget.show()
-
-    def jumpToLogin(self, event):
-        self.registerWidget.hide()
-        self.userTabLabel.setText("Login:")
-        self.userLabMainSplitter.show()
-
+        self.userWidget.hide()
 
     def initRegister(self):
         self.regPromptBoxes = {}
@@ -206,28 +196,33 @@ class ImageCropper(QMainWindow):
         self.firstNameInput.setMaxLength(20)
         self.firstNameInput.setPlaceholderText("Enter first name..")
         self.createLineEdit("First Name:", self.firstNameInput, mainLayout, self.regPromptBoxes)
+        self.firstNameInput.mousePressEvent = self.initRegPrompt
 
         self.lastNameInput = QLineEdit()
         self.lastNameInput.setMaxLength(20)
         self.lastNameInput.setPlaceholderText("Enter last name..")
         self.createLineEdit("Last Name:", self.lastNameInput, mainLayout, self.regPromptBoxes)
+        self.lastNameInput.mousePressEvent = self.initRegPrompt
 
         self.emailInput = QLineEdit()
         self.emailInput.setMaxLength(50)
         self.emailInput.setPlaceholderText("Enter email..")
         self.createLineEdit("Email:", self.emailInput, mainLayout, self.regPromptBoxes)
+        self.emailInput.mousePressEvent = self.initRegPrompt
 
         self.passwordInput = QLineEdit()
         self.passwordInput.setEchoMode(QLineEdit.Password)
         self.passwordInput.setMaxLength(20)
         self.passwordInput.setPlaceholderText("Enter password..")
         self.createLineEdit("Password:", self.passwordInput, mainLayout, self.regPromptBoxes)
+        self.passwordInput.mousePressEvent = self.initRegPrompt
 
         self.confirmPasswordInput = QLineEdit()
         self.confirmPasswordInput.setEchoMode(QLineEdit.Password)
         self.confirmPasswordInput.setMaxLength(20)
         self.confirmPasswordInput.setPlaceholderText("Confirm password..")
         self.createLineEdit("Confirm Password:", self.confirmPasswordInput, mainLayout, self.regPromptBoxes)
+        self.confirmPasswordInput.mousePressEvent = self.initRegPrompt
 
         buttonsLayout = QHBoxLayout()
         self.registerButton = QPushButton("OK")
@@ -238,36 +233,42 @@ class ImageCropper(QMainWindow):
         buttonsLayout.addWidget(self.cancelButton)
         mainLayout.addLayout(buttonsLayout)
 
+        self.registerTip = QLabel("This part is for test")
+        self.registerTip.setStyleSheet("color:red; font-family:SimHei; font-size:12pt;")
+        self.registerTip.setFixedHeight(20)
+        self.registerTip.setWordWrap(True)
+        self.registerTip.hide()
+        mainLayout.addWidget(self.registerTip)
+
         self.registerWidget.setLayout(mainLayout)
         self.userTablayout.addWidget(self.registerWidget)
 
     def initLogin(self):
         self.loginPromptBoxes = {}
         self.loginWidget = QWidget()
-
-
-        self.userLabMainSplitter = QSplitter(Qt.Vertical)
-
+        self.userLoginSplitter = QSplitter(Qt.Vertical)
         loginLayout = QVBoxLayout()
-        loginWidget = QWidget()
-        loginWidget.setLayout(loginLayout)
+        self.loginWidget.setLayout(loginLayout)
         self.loginEmailInput = QLineEdit()
         self.loginEmailInput.setMaxLength(50)
         self.loginEmailInput.setPlaceholderText("Enter email..")
         self.createLineEdit("Email:", self.loginEmailInput, loginLayout, self.loginPromptBoxes)
+        self.loginEmailInput.mousePressEvent = self.initLoginPrompt
+
         self.loginPasswordInput = QLineEdit()
         self.loginPasswordInput.setEchoMode(QLineEdit.Password)
         self.loginPasswordInput.setMaxLength(20)
         self.loginPasswordInput.setPlaceholderText("Enter password..")
         self.createLineEdit("Password:", self.loginPasswordInput, loginLayout, self.loginPromptBoxes)
-
+        self.loginPasswordInput.mousePressEvent = self.initLoginPrompt
         buttonsLayout = QVBoxLayout()
         self.loginButton = QPushButton("login")
+        self.loginButton.clicked.connect(self.onLogin)
 
         gotoRegisterLabel = QLabel("new comers? go to register")
         gotoRegisterLabel.setStyleSheet("""
                 color:gray;
-                font-family:黑体; 
+                font-family:SimHei; 
                 font-size:10pt; 
                 text-decoration: underline;
         """)
@@ -281,22 +282,57 @@ class ImageCropper(QMainWindow):
         infoLayout = QHBoxLayout()
         infoWidget = QWidget()
         infoWidget.setLayout(infoLayout)
-        infoLayout.addWidget(QLabel("This part is for test"))
+        pixmap = QPixmap("../icons/cloud-download.png")
+        pixmap = pixmap.scaled(64, 64, Qt.KeepAspectRatio)
+        label = QLabel()
+        label.setPixmap(pixmap)
+        infoLayout.addWidget(label)
+        infoLayout.addWidget(QLabel("Login to access your files."))
+        infoLayout.setAlignment(Qt.AlignCenter)
 
-        self.userLabMainSplitter.addWidget(loginWidget)
-        self.userLabMainSplitter.addWidget(infoWidget)
-        self.userLabMainSplitter.setCollapsible(0, False)
-        self.userLabMainSplitter.setCollapsible(1, False)
-        self.userLabMainSplitter.setSizes([500, 2000])
+        self.userLoginSplitter.addWidget(self.loginWidget)
+        self.userLoginSplitter.addWidget(infoWidget)
+        self.userLoginSplitter.setCollapsible(0, False)
+        self.userLoginSplitter.setCollapsible(1, False)
+        self.userLoginSplitter.setSizes([500, 2000])
 
-        self.userTablayout.addWidget(self.userLabMainSplitter)
+        self.userTablayout.addWidget(self.userLoginSplitter)
+
+    def initUserMain(self):
+        self.userMainSplitter = QSplitter(Qt.Vertical)
+
+        userLoggedInLayout = QVBoxLayout()
+        self.userLoggedInWidget = QWidget()
+        self.userLoggedInWidget.setLayout(userLoggedInLayout)
+        self.userLoggedInWidget.setFixedHeight(60)
+        buttonsLayout2 = QHBoxLayout()
+        buttonsWidget2 = QWidget()
+        buttonsWidget2.setLayout(buttonsLayout2)
+        buttonsWidget2.setFixedHeight(50)
+        buttonsLayout2.setContentsMargins(0, 0, 0, 0)
+        self.userLogOutButton = QPushButton("Log out")
+        self.userLogOutButton.clicked.connect(self.logout)
+        buttonsLayout2.addWidget(self.userLogOutButton)
+        userLoggedInLayout.addWidget(buttonsWidget2)
+
+        infoLayout = QHBoxLayout()
+        infoWidget = QWidget()
+        infoWidget.setLayout(infoLayout)
+        infoLayout.addWidget(QLabel("Why?"))
+
+        self.userMainSplitter.addWidget(self.userLoggedInWidget)
+        self.userMainSplitter.addWidget(infoWidget)
+        self.userMainSplitter.setCollapsible(0, False)
+        self.userMainSplitter.setCollapsible(1, False)
+        self.userMainSplitter.setSizes([300, 2000])
+
+        self.userTablayout.addWidget(self.userMainSplitter)
 
     def createLineEdit(self, label, lineEdit, mainLayout, promptBoxes):
         promptLabel = QLabel()
-        promptLabel.setStyleSheet("color:red; font-family:黑体; font-size:11pt;")
+        promptLabel.setStyleSheet("color:red; font-family:SimHei; font-size:11pt;")
         promptLabel.setText("")
         promptBoxes[lineEdit] = promptLabel
-        lineEdit.mousePressEvent = self.initRegPrompt
         layout = QVBoxLayout()
         widget = QWidget()
         widget.setFixedHeight(100)
@@ -311,8 +347,13 @@ class ImageCropper(QMainWindow):
         promptBoxes[lineEdit].setText(label)
 
     def initRegPrompt(self, event):
+        self.registerTip.hide()
         for lineEdit, prompt in self.regPromptBoxes.items():
             self.setPrompt(lineEdit, "", self.regPromptBoxes)
+
+    def initLoginPrompt(self, event):
+        for lineEdit, prompt in self.loginPromptBoxes.items():
+            self.setPrompt(lineEdit, "", self.loginPromptBoxes)
 
     def onRegister(self):
         for lineEdit, prompt in self.regPromptBoxes.items():
@@ -329,7 +370,17 @@ class ImageCropper(QMainWindow):
         if self.passwordInput.text() != self.confirmPasswordInput.text():
             self.setPrompt(self.confirmPasswordInput, "Passwords do not match.", self.regPromptBoxes)
             return
-        self.sendRegisterRequest()
+        self.register()
+
+    def onLogin(self):
+        for lineEdit, prompt in self.loginPromptBoxes.items():
+            if not lineEdit.text():
+                self.setPrompt(lineEdit, "This field is required.", self.loginPromptBoxes)
+                return
+        if not self.validateEmail(self.loginEmailInput.text()):
+            self.loginPromptBoxes[self.loginEmailInput].setText("Invalid email address.")
+            return
+        self.login()
 
     def validateEmail(self, email):
         if not self.EMAIL_PATTERN.match(email):
@@ -346,8 +397,80 @@ class ImageCropper(QMainWindow):
         else:
             return ""
 
-    def sendRegisterRequest(self):
+    def register(self):
         self.tabUser.setDisabled(True)
+        data = {
+            "email": self.emailInput.text(),
+            "password": getSha256(self.passwordInput.text()),
+            "firstName": self.firstNameInput.text(),
+            "lastName": self.lastNameInput.text()
+        }
+        self.user.register(data)
+
+    def responseRegister(self, message, status):
+        self.tabUser.setDisabled(False)
+        if status == 200:
+            self.tabUser.setDisabled(True)
+        elif status == 400:
+            self.setPrompt(self.emailInput, message, self.regPromptBoxes)
+        elif status == -1:
+            self.registerTip.setText(message)
+            self.registerTip.show()
+        else:
+            assert False, "Unknown status code"
+
+    def login(self):
+        self.tabUser.setDisabled(True)
+        data = {
+            "email": self.loginEmailInput.text(),
+            "password": getSha256(self.loginPasswordInput.text())
+        }
+        self.user.login(data)
+
+    def responseLogin(self, message, status):
+        self.tabUser.setDisabled(False)
+        if status == 200:
+            self.tabUser.setDisabled(True)
+        elif status == 400 or status == -1:
+            self.setPrompt(self.loginPasswordInput, message, self.loginPromptBoxes)
+        else:
+            assert False, "Unknown status code"
+
+    def logout(self):
+        self.tabUser.setDisabled(True)
+        self.user.logout()
+
+    def responseLogout(self):
+        self.tabUser.setDisabled(False)
+        self.jumpToLogin(None)
+        self.userWidget.hide()
+
+    def jumpToUserTab(self, event):
+        self.tabs.setCurrentIndex(3)
+
+    def jumpToRegister(self, event):
+        self.userLoginSplitter.hide()
+        self.userMainSplitter.hide()
+        self.userTabLabel.setText("<h2>Register:</h2>")
+        self.registerWidget.show()
+
+    def jumpToLogin(self, event):
+        self.userMainSplitter.hide()
+        self.registerWidget.hide()
+        self.userTabLabel.setText("<h2>Login:</h2>")
+        self.userLoginSplitter.show()
+
+    def jumpToUserLoggedIn(self):
+        if self.user.state == 1:
+            self.userLoginSplitter.hide()
+            self.registerWidget.hide()
+            self.userName = f"{self.user.firstName} {self.user.lastName}"
+            self.userTabLabel.setText(f"The account of <b><u>{self.user.email}</u></b>")
+            self.userLabel.setText(f"Welcome back,  <b>{self.userName} 🍒</b>")
+            self.userMainSplitter.show()
+            self.userWidget.show()
+            self.tabUser.setDisabled(False)
+
 
     #   ====================  File Module Functions ====================
     def openAvatarFile(self, event):
@@ -706,6 +829,11 @@ class ImageCropper(QMainWindow):
                 self.buttonAIStart.hide()
             else:
                 self.buttonAIStart.show()
+        elif self.tabs.tabText(index) == 'User':
+            if self.user.state == 0:
+                if self.user.loadCookies():
+                    self.user.getUser()
+
 
     def updateView(self):
         self.scene.clear()

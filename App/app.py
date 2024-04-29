@@ -13,6 +13,7 @@ if __name__ == "__main__":
     # QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     # QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
     app = QApplication(sys.argv)
+    app.setStyleSheet(open("ui/style.qss", "r").read())
     win = ImageCropper()
     win.show()
     sys.exit(app.exec_())
