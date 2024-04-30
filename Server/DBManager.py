@@ -112,6 +112,15 @@ def addTextRecord(data):
     return newId
 
 
+def addDetection(data):
+    query = """
+    INSERT INTO detection (text_id, proportion)
+    VALUES (%s, %s)
+    """
+    newId = executeQuery(query, data, operation="COMMIT")
+    return newId
+
+
 def deleteRecord(recordId):
     query = "DELETE FROM records WHERE id = %s"
     executeQuery(query, (recordId,), operation="COMMIT")
@@ -145,6 +154,12 @@ def deleteDetection(textId):
 def getFileRecord(recordId):
     query = "SELECT * FROM file_record WHERE record_id = %s"
     result = executeQuery(query, (recordId,), dictionary=True)
+    return result
+
+
+def getDetection(textId):
+    query = "SELECT * FROM detection WHERE text_id = %s"
+    result = executeQuery(query, (textId,), dictionary=True)
     return result
 
 

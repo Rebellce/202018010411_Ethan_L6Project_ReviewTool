@@ -186,6 +186,29 @@ class UserModule:
             self.ui.SaveAsNewResult(message, statusCode)
         reply.deleteLater()
 
+    def insertAiRecord(self, data):
+        request = QNetworkRequest(QUrl("http://localhost:5000/upload/new/ai"))
+        request.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
+        reply = self.manager.post(request, QByteArray(bytes(json.dumps(data), 'utf-8')))
+        reply.finished.connect(self.responseInsertAiRecord)
+
+    def responseInsertAiRecord(self):
+        reply = self.manager.sender()
+        statusCode = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+        if reply.error() == QNetworkReply.NoError:
+            response = json.loads(str(reply.readAll(), 'utf-8'))
+            RID = response['message']
+            self.ui.SaveAsNewResult(int(RID), statusCode)
+        else:
+            print("Error:", reply.errorString())
+            if statusCode is None:
+                message = f"Something wrong.. (NoServerResponse)"
+            else:
+                message = f"Something wrong.. ({statusCode})"
+            statusCode = -1
+            self.ui.SaveAsNewResult(message, statusCode)
+        reply.deleteLater()
+
     def refreshRecords(self):
         request = QNetworkRequest(QUrl("http://localhost:5000/load/records"))
         reply = self.manager.get(request)
@@ -269,6 +292,27 @@ class UserModule:
             else:
                 message = f"Something wrong.. ({statusCode})"
             self.ui.getOCRResult(message, statusCode)
+        reply.deleteLater()
+
+    def getAi(self, recordId):
+        request = QNetworkRequest(QUrl(f"http://localhost:5000/load/ai/{recordId}"))
+        reply = self.manager.get(request)
+        reply.finished.connect(self.responseGetAi)
+
+    def responseGetAi(self):
+        reply = self.manager.sender()
+        statusCode = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+        if reply.error() == QNetworkReply.NoError:
+            response = json.loads(str(reply.readAll(), 'utf-8'))
+            dicts = response['data']
+            self.ui.getAiResult(dicts, statusCode)
+        else:
+            print("Error:", reply.errorString())
+            if statusCode is None:
+                message = f"Something wrong.. (NoServerResponse)"
+            else:
+                message = f"Something wrong.. ({statusCode})"
+            self.ui.getAiResult(message, statusCode)
         reply.deleteLater()
 
 

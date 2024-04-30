@@ -145,6 +145,36 @@ def uploadOCR():
         return jsonify({'message': 'User not logged in!'}), 400
 
 
+@app.route('/upload/new/ai', methods=['POST'])
+def uploadAI():
+    if 'user' in session:
+        try:
+            json = request.get_json()
+            userId = session['id']
+            recordName = json['name']
+            recordType = 'AI'
+            data = (userId, recordName, recordType)
+            print(data)
+            recordId = db.addRecord(data)
+            if recordId is None:
+                return jsonify({'message': 'Error uploading file!'}), 500
+            dicts = json['dicts']
+            for dic in dicts:
+                textRecordId = db.addTextRecord((recordId, dic['content']))
+                if textRecordId is None:
+                    return jsonify({'message': 'Error uploading file!'}), 500
+                detectionId = db.addDetection((textRecordId, dic['proportion']))
+                if detectionId is None:
+                    return jsonify({'message': 'Error uploading file!'}), 500
+        except Exception as e:
+            print(e)
+            return jsonify({'message': 'Error uploading file!'}), 500
+
+        return jsonify({'message': recordId}), 200
+    else:
+        return jsonify({'message': 'User not logged in!'}), 400
+
+
 @app.route('/load/records', methods=['GET'])
 def loadRecords():
     if 'user' in session:
@@ -200,6 +230,32 @@ def loadFileRecord(recordId):
         with open(path, "rb") as image_file:
             img = base64.b64encode(image_file.read()).decode('utf-8')
         return jsonify({'image': img}), 200
+
+
+@app.route('/load/ocr/<int:recordId>', methods=['GET'])
+def loadOCRRecord(recordId):
+    if 'user' in session:
+        result = db.getTextRecord(recordId)
+        if not result:
+            return jsonify({'message': 'Record not found!'}), 400
+        text = result[0]['content']
+        return jsonify({'text': text}), 200
+
+
+@app.route('/load/ai/<int:recordId>', methods=['GET'])
+def loadAIRecord(recordId):
+    if 'user' in session:
+        lst = []
+        results = db.getTextRecord(recordId)
+        if not results:
+            return jsonify({'message': 'Record not found!'}), 400
+        for result in results:
+            textId = result['id']
+            detection = db.getDetection(textId)
+            if detection:
+                detection = detection[0]
+                lst.append({'content': result['content'], 'proportion': detection['proportion']})
+        return jsonify({'data': lst}), 200
 
 
 if __name__ == '__main__':

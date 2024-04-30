@@ -519,6 +519,12 @@ class ImageCropper(QMainWindow):
     def jumpToUserTab(self, event):
         self.tabs.setCurrentIndex(3)
 
+    def jumpToOCRTab(self, event):
+        self.tabs.setCurrentIndex(1)
+
+    def jumpToAITextTab(self, event):
+        self.tabs.setCurrentIndex(2)
+
     def jumpToRegister(self, event):
         self.userLoginSplitter.hide()
         self.userMainSplitter.hide()
@@ -597,7 +603,23 @@ class ImageCropper(QMainWindow):
                 self.tableTip.setText("No text on your OCR result.")
                 self.tabUser.setDisabled(False)
         elif self.userTabelComboBox.currentText() == "AI Text":
-            pass
+            if self.textEditAIText.toPlainText() != "" and self.detector.data != []:
+                if selected == -1:
+                    # user not select any row, save as new
+                    self.userTempText, ok = QInputDialog.getText(self, 'Save as New', 'Enter the file name:')
+                    if ok:
+                        self.userTempTime = datetime.now()
+                        self.userTempType = "Ai"
+                        data = {
+                            "name": self.userTempText,
+                            "dicts": self.detector.data
+                        }
+                        self.user.insertAiRecord(data)
+                    else:
+                        self.tabUser.setDisabled(False)
+            else:
+                self.tableTip.setText("Your AI text detector has no results.")
+                self.tabUser.setDisabled(False)
         else:
             assert False, "Unknown record type"
 
@@ -653,9 +675,12 @@ class ImageCropper(QMainWindow):
             if _type == "File":
                 self.user.getImage(recordId)
             elif _type == "OCR":
-                pass
+                self.user.getOCR(recordId)
             elif _type == "Ai":
-                pass
+                if self.detector.model:
+                    self.user.getAi(recordId)
+                else:
+                    self.tableTip.setText("Detection model unavailable")
             else:
                 assert False, "Unknown record type"
 
@@ -663,6 +688,35 @@ class ImageCropper(QMainWindow):
         if statusCode == 200:
             self.pixmap = convertBase64ToPixmap(result)
             openCloudIMGFile(self, self.pixmap)
+        else:
+            self.tableTip.setText(result)
+        self.tabUser.setDisabled(False)
+
+    def getOCRResult(self, result, statusCode):
+        if statusCode == 200:
+            self.textEditOCRResult.setText(result)
+            self.jumpToOCRTab(None)
+            self.OCRSwitch = True
+        else:
+            self.tableTip.setText(result)
+        self.tabUser.setDisabled(False)
+
+    def getAiResult(self, result, statusCode):
+        if statusCode == 200:
+            lst = []
+            content = ""
+            for dic in result:
+                para = dic['content']
+                content += para + "\n"
+                prob = eval(dic['proportion'])
+                self.detector.data.append(dic)
+                result = self.detector.formatResult(para, prob)
+                lst.append(result)
+            self.detectResultContent.reloadContent(lst)
+            self.detectResultLabel.clear()
+            self.detectResultContent.show()
+            self.textEditAIText.setText(content)
+            self.jumpToAITextTab(None)
         else:
             self.tableTip.setText(result)
         self.tabUser.setDisabled(False)
@@ -798,8 +852,8 @@ class ImageCropper(QMainWindow):
         alignJustify(self)
 
     def setupAITextTab(self):
-        # 使用QSplitter来创建可调整大小的布局
-        splitter = QSplitter(Qt.Vertical)  # 垂直分割器
+
+        splitter = QSplitter(Qt.Vertical)
 
         controlWidget = QWidget()
         controlLayout = QVBoxLayout()

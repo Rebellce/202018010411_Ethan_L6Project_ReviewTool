@@ -34,6 +34,7 @@ class Detector:
         self.model = None
         self.tokenizer = None
         self.initState = None
+        self.data = []
 
     def initModel(self):
         logging.getLogger("transformers").setLevel(logging.ERROR)
@@ -57,9 +58,10 @@ class Detector:
             paragraphs = [para for para in paragraphs if para.strip() != '']
             results = []
             for para in paragraphs:
-                result = self._detect(para)
+                prob = self._detect(para)
+                self.data.append({'content': para, 'proportion': prob})
+                result = self.formatResult(para, prob)
                 results.append(result)
-                hover_text = f"Detection Result: {result['type']}, Level: {result['lvl']}"
             ImageCropper.detectResultContent.reloadContent(results)
             ImageCropper.detectResultLabel.clear()
         else:
@@ -70,15 +72,20 @@ class Detector:
         ImageCropper.buttonAIStart.setDisabled(False)
         ImageCropper.buttonReloadModel.setDisabled(False)
 
-    def _detect(self, para) -> dict:
+
+    def _detect(self, para) -> float:
         # Tokenize the input text and convert to Tensor
-        dic = {'text': para}
+
         inputs = self.tokenizer(para, return_tensors="pt")
         outputs = self.model(**inputs)
         logits = outputs.logits
         prob = torch.nn.functional.softmax(logits, dim=1)
-        human = prob[0][0].item() * 100
-        gpt = prob[0][1].item() * 100
+        return round(prob[0][0].item(), 4)
+
+    def formatResult(self, para, prob):
+        dic = {'text': para}
+        human = prob * 100
+        gpt = (1 - prob) * 100
         if human > gpt:
             dic['type'] = "Human"
             dic["prob"] = human
