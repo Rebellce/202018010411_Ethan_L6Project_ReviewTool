@@ -1,3 +1,5 @@
+import base64
+
 import imutils
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -185,7 +187,7 @@ def previewResize(ui):
         height = int(ui.oldPixmap.height() * heightPercent)
         ui.pixmap = ui.oldPixmap.scaled(QSize(width, height), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
         ui.scene.clear()
-        ui.scene.setSceneRect(0, 0,  ui.pixmap.width(),  ui.pixmap.height())
+        ui.scene.setSceneRect(0, 0, ui.pixmap.width(), ui.pixmap.height())
         ui.scene.addPixmap(ui.pixmap)
         ui.scene.update()
 
@@ -465,3 +467,23 @@ def converPixmapToCV(pixmap):
     image_data = qimage2ndarray.rgb_view(pixmap.toImage())
     image_data = cv2.cvtColor(image_data, cv2.COLOR_RGB2BGR)
     return image_data
+
+
+def convertPixmapToba64(pixmap):
+    byte_array = QByteArray()
+    buffer = QBuffer(byte_array)
+    buffer.open(QIODevice.WriteOnly)
+
+    pixmap.save(buffer, 'PNG')
+    buffer.close()
+
+    base64_data = base64.b64encode(byte_array)
+    return base64_data.decode('utf-8')
+
+
+def convertBase64ToPixmap(base64_data):
+    byte_array = QByteArray(base64.b64decode(base64_data))
+    pixmap = QPixmap()
+    if not pixmap.loadFromData(byte_array, 'PNG'):
+        print("Failed to load image")
+    return pixmap

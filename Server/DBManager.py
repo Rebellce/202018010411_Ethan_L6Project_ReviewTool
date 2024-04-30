@@ -49,7 +49,7 @@ def executeQuery(query, data=None, operation="SELECT", dictionary=False, size=0)
                     result = cursor.fetchmany(size=size)
             cursor.close()
     except Exception as e:
-        print(f"An error occurred while executing the query: {query}")
+        print(f"An error occurred while executing the query: {query}\nError: {e}")
     return result
 
 
@@ -71,6 +71,81 @@ def getUserByEmail(email):
         return False
     else:
         return result[0]
+
+
+def addRecord(data):
+    query = """
+    INSERT INTO records (user_id, name, type) 
+    VALUES (%s, %s, %s)
+    """
+    newId = executeQuery(query, data, operation="COMMIT")
+    return newId
+
+
+def getRecords(userId):
+    query = "SELECT * FROM records WHERE user_id = %s"
+    result = executeQuery(query, (userId,), dictionary=True)
+    return result
+
+
+def getRecord(recordId):
+    query = "SELECT * FROM records WHERE id = %s"
+    result = executeQuery(query, (recordId,), dictionary=True)
+    return result
+
+
+def addFileRecord(data):
+    query = """
+    INSERT INTO file_record (record_id, path)
+    VALUES (%s, %s)
+    """
+    newId = executeQuery(query, data, operation="COMMIT")
+    return newId
+
+
+def addTextRecord(data):
+    query = """
+    INSERT INTO text_record (record_id, content)
+    VALUES (%s, %s)
+    """
+    newId = executeQuery(query, data, operation="COMMIT")
+    return newId
+
+
+def deleteRecord(recordId):
+    query = "DELETE FROM records WHERE id = %s"
+    executeQuery(query, (recordId,), operation="COMMIT")
+    return True
+
+
+def deleteFileRecord(recordId):
+    query = "DELETE FROM file_record WHERE record_id = %s"
+    executeQuery(query, (recordId,), operation="COMMIT")
+    return True
+
+
+def deleteTextRecord(recordId):
+    query = "DELETE FROM text_record WHERE record_id = %s"
+    executeQuery(query, (recordId,), operation="COMMIT")
+    return True
+
+
+def getTextRecord(recordId):
+    query = "SELECT * FROM text_record WHERE record_id = %s"
+    result = executeQuery(query, (recordId,), dictionary=True)
+    return result
+
+
+def deleteDetection(textId):
+    query = "DELETE FROM detection WHERE text_id = %s"
+    executeQuery(query, (textId,), operation="COMMIT")
+    return True
+
+
+def getFileRecord(recordId):
+    query = "SELECT * FROM file_record WHERE record_id = %s"
+    result = executeQuery(query, (recordId,), dictionary=True)
+    return result
 
 
 if __name__ == '__main__':

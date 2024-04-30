@@ -1,8 +1,10 @@
 import re
+from datetime import datetime
 
+from App.ui.myLabelTabel import MyTabelWidget, loadColor, loadEmoji
 from App.ui.myQGraphicsView import myQGraphicsView as myQGraphicsView
 
-from App.modules.fileModule import openIMGFile, saveIMGFile, openAvatarFile
+from App.modules.fileModule import openIMGFile, saveIMGFile, openAvatarFile, openCloudIMGFile
 from App.modules.imgModule import *
 from App.modules.textModule import *
 from App.modules.OCRModule import *
@@ -22,6 +24,9 @@ class ImageCropper(QMainWindow):
 
         self.user = UserModule()
         self.userName = ""
+        self.userTempText = ""
+        self.userTempType = ""
+        self.userTempTime = None
         self.scale = 1
         self.image = None
         self.painting = False
@@ -119,7 +124,7 @@ class ImageCropper(QMainWindow):
         # Add the splitter to the main layout
         self.layout.addWidget(self.splitter)
 
-        initialSizes = [width * 0.75, width * 0.25]
+        initialSizes = [width * 0.72, width * 0.28]
         self.splitter.setSizes(initialSizes)
 
         # The splitter handle allows resizing of the contained widgets
@@ -305,26 +310,92 @@ class ImageCropper(QMainWindow):
         self.userLoggedInWidget = QWidget()
         self.userLoggedInWidget.setLayout(userLoggedInLayout)
         self.userLoggedInWidget.setFixedHeight(60)
-        buttonsLayout2 = QHBoxLayout()
-        buttonsWidget2 = QWidget()
-        buttonsWidget2.setLayout(buttonsLayout2)
-        buttonsWidget2.setFixedHeight(50)
-        buttonsLayout2.setContentsMargins(0, 0, 0, 0)
+        buttonsLayout1 = QHBoxLayout()
+        buttonsWidget1 = QWidget()
+        buttonsWidget1.setLayout(buttonsLayout1)
+        buttonsWidget1.setFixedHeight(50)
+        buttonsLayout1.setContentsMargins(0, 0, 0, 0)
         self.userLogOutButton = QPushButton("Log out")
         self.userLogOutButton.clicked.connect(self.logout)
-        buttonsLayout2.addWidget(self.userLogOutButton)
-        userLoggedInLayout.addWidget(buttonsWidget2)
+        buttonsLayout1.addWidget(self.userLogOutButton)
+        userLoggedInLayout.addWidget(buttonsWidget1)
 
-        infoLayout = QHBoxLayout()
-        infoWidget = QWidget()
-        infoWidget.setLayout(infoLayout)
-        infoLayout.addWidget(QLabel("Why?"))
+        buttonLayout2 = QHBoxLayout()
+        self.userTabelComboBox = QComboBox()
+        self.userTabelComboBox.addItem("Canvas")
+        self.userTabelComboBox.addItem("OCR Text")
+        self.userTabelComboBox.addItem("AI Text")
+        # self.userTabelComboBox.currentIndexChanged.connect(self.userTabelRefresh)
+
+        saveButton = QToolButton(self)
+        saveButton.setIcon(QIcon("../icons/cloud-upload.png"))
+        saveButton.setIconSize(QSize(25, 25))
+        saveButton.setToolTip("Upload current work to cloud")
+        saveButton.clicked.connect(self.userTabelSave)
+
+        removeButton = QToolButton(self)
+        removeButton.setIcon(QIcon("../icons/delete.png"))
+        removeButton.setIconSize(QSize(25, 25))
+        removeButton.setToolTip("Remove the selected record")
+        removeButton.clicked.connect(self.userTabelDelete)
+
+        moveButton = QToolButton(self)
+        moveButton.setIcon(QIcon("../icons/top-filling.png"))
+        moveButton.setIconSize(QSize(25, 25))
+        moveButton.setToolTip("Move the selected record to top")
+        moveButton.clicked.connect(self.userTabelToTop)
+
+        loadButton = QToolButton(self)
+        loadButton.setIcon(QIcon("../icons/load.png"))
+        loadButton.setIconSize(QSize(25, 25))
+        loadButton.setToolTip("Open the selected record")
+        loadButton.clicked.connect(self.userTabelLoad)
+
+        refreshButton = QToolButton(self)
+        refreshButton.setIcon(QIcon("../icons/Refresh.png"))
+        refreshButton.setIconSize(QSize(25, 25))
+        refreshButton.setToolTip("Refresh")
+        refreshButton.clicked.connect(self.userTabelRefresh)
+
+        buttonLayout2.addWidget(self.userTabelComboBox)
+        buttonLayout2.addWidget(saveButton)
+        buttonLayout2.addWidget(removeButton)
+        buttonLayout2.addWidget(moveButton)
+        buttonLayout2.addWidget(loadButton)
+        buttonLayout2.addWidget(refreshButton)
+
+        buttonsWidget2 = QWidget()
+        buttonsWidget2.setLayout(buttonLayout2)
+        buttonLayout2.setContentsMargins(0, 0, 0, 0)
+
+        tabelLayout = QVBoxLayout()
+        tabelLayout.setContentsMargins(0, 0, 0, 0)
+        tabelLayout.setSpacing(0)
+        tabelWidget = QWidget()
+        tabelWidget.setLayout(tabelLayout)
+        self.tableWidget = MyTabelWidget(self)
+        scrollArea = QScrollArea()
+        tabelLayout.addWidget(scrollArea)
+        scrollArea.setWidget(self.tableWidget)
+        scrollArea.setWidgetResizable(True)
+        scrollArea.setFrameStyle(QScrollArea.NoFrame)
+        scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.tableWidget.setContentsMargins(0, 0, 0, 0)
+        self.tableTip = QLabel("")
+        self.tableTip.setStyleSheet("color:red; font-family:SimHei; font-size:12pt;")
+        self.tableTip.setFixedHeight(20)
+        self.tableTip.setWordWrap(True)
+        self.tableTip.setAlignment(Qt.AlignCenter)
+        tabelLayout.addWidget(self.tableTip)
 
         self.userMainSplitter.addWidget(self.userLoggedInWidget)
-        self.userMainSplitter.addWidget(infoWidget)
+        self.userMainSplitter.addWidget(buttonsWidget2)
+        self.userMainSplitter.addWidget(tabelWidget)
         self.userMainSplitter.setCollapsible(0, False)
         self.userMainSplitter.setCollapsible(1, False)
-        self.userMainSplitter.setSizes([300, 2000])
+        self.userMainSplitter.setCollapsible(2, False)
+        self.userMainSplitter.setSizes([300, 100, 2000])
 
         self.userTablayout.addWidget(self.userMainSplitter)
 
@@ -464,6 +535,7 @@ class ImageCropper(QMainWindow):
         if self.user.state == 1:
             self.userLoginSplitter.hide()
             self.registerWidget.hide()
+            self.userTabelRefresh()
             self.userName = f"{self.user.firstName} {self.user.lastName}"
             self.userTabLabel.setText(f"The account of <b><u>{self.user.email}</u></b>")
             self.userLabel.setText(f"Welcome back,  <b>{self.userName} 🍒</b>")
@@ -471,6 +543,129 @@ class ImageCropper(QMainWindow):
             self.userWidget.show()
             self.tabUser.setDisabled(False)
 
+    def userTabelToTop(self):
+        self.tableWidget.moveRowToTop()
+
+    def userTabelSave(self):
+        self.tableTip.setText("")
+        self.tabUser.setDisabled(True)
+        selected = self.tableWidget.selectedRowIndex
+        if self.userTabelComboBox.currentText() == "Canvas":
+            if self.pixmap is not None:
+                if selected == -1:
+                    # user not select any row, save as new
+                    self.userTempText, ok = QInputDialog.getText(self, 'Save as New', 'Enter the file name:')
+                    if ok:
+                        self.userTempTime = datetime.now()
+                        self.userTempType = "File"
+                        data = {
+                            "name": self.userTempText,
+                            "image": convertPixmapToba64(self.pixmap)
+                        }
+                        self.user.insertFileRecord(data)
+                    else:
+                        self.tabUser.setDisabled(False)
+
+                else:
+                    # user select a row
+                    reply = QMessageBox.question(self, 'Save and Overwrite',
+                                                 "Are you sure to overwrite the record?",
+                                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+                    if reply == QMessageBox.Yes:
+                        pass
+                    else:
+                        self.tabUser.setDisabled(False)
+            else:
+                self.tableTip.setText("No image on your canvas.")
+        elif self.userTabelComboBox.currentText() == "OCR Text":
+            if self.textEditOCRResult.toPlainText() != "":
+                if selected == -1:
+                    # user not select any row, save as new
+                    self.userTempText, ok = QInputDialog.getText(self, 'Save as New', 'Enter the file name:')
+                    if ok:
+                        self.userTempTime = datetime.now()
+                        self.userTempType = "OCR"
+                        data = {
+                            "name": self.userTempText,
+                            "text": self.textEditOCRResult.toPlainText()
+                        }
+                        self.user.insertOCRRecord(data)
+                    else:
+                        self.tabUser.setDisabled(False)
+            else:
+                self.tableTip.setText("No text on your OCR result.")
+                self.tabUser.setDisabled(False)
+        elif self.userTabelComboBox.currentText() == "AI Text":
+            pass
+        else:
+            assert False, "Unknown record type"
+
+    def SaveAsNewResult(self, result, statusCode):
+        if statusCode == 200:
+            _text = self.userTempText
+            _time = self.userTempTime.strftime("%Y-%m-%d %H:%M:%S")
+            _type = self.userTempType
+            _color = loadColor(_type)
+            _emoji = loadEmoji(_type)
+
+            self.tableWidget.insertRow(_emoji, _text, _time, _type, color=_color, top=True, RID=result)
+        else:
+            self.tableTip.setText(result)
+        self.tabUser.setDisabled(False)
+
+    def userTabelRefresh(self):
+        self.tableTip.setText("")
+        self.tabUser.setDisabled(True)
+        self.user.refreshRecords()
+
+    def refreshRecordsResult(self, result, statusCode):
+        if statusCode == 200:
+            self.tableWidget.clearRows()
+            for record in result:
+                emoji = loadEmoji(record['type'])
+                color = loadColor(record['type'])
+                self.tableWidget.insertRow(emoji, record['name'], record['timestamp'], record['type'], color=color,
+                                           RID=record['id'])
+        else:
+            self.tableTip.setText(result)
+        self.tabUser.setDisabled(False)
+
+    def userTabelDelete(self):
+        row = self.tableWidget.selectedRowIndex
+        if row != -1:
+            self.tabUser.setDisabled(True)
+            recordId = self.tableWidget.rows[row].recordId
+            self.user.deleteRecord(recordId)
+
+    def deleteRecordResult(self, result, statusCode):
+        if statusCode == 200:
+            self.tableWidget.removeRow()
+        else:
+            self.tableTip.setText(result)
+        self.tabUser.setDisabled(False)
+
+    def userTabelLoad(self):
+        row = self.tableWidget.selectedRowIndex
+        if row != -1:
+            recordId = self.tableWidget.rows[row].recordId
+            _type = self.tableWidget.rows[row].type
+            if _type == "File":
+                self.user.getImage(recordId)
+            elif _type == "OCR":
+                pass
+            elif _type == "Ai":
+                pass
+            else:
+                assert False, "Unknown record type"
+
+    def getImageResult(self, result, statusCode):
+        if statusCode == 200:
+            self.pixmap = convertBase64ToPixmap(result)
+            openCloudIMGFile(self, self.pixmap)
+        else:
+            self.tableTip.setText(result)
+        self.tabUser.setDisabled(False)
 
     #   ====================  File Module Functions ====================
     def openAvatarFile(self, event):
@@ -833,7 +1028,6 @@ class ImageCropper(QMainWindow):
             if self.user.state == 0:
                 if self.user.loadCookies():
                     self.user.getUser()
-
 
     def updateView(self):
         self.scene.clear()

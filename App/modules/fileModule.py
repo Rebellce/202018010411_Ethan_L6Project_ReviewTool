@@ -23,6 +23,19 @@ def openIMGFile(ui):
         ui.initEditTool()
 
 
+def openCloudIMGFile(ui, pixmap):
+    ui.editToolBarH.clear()
+    ui.scale = 1
+    ui.view.activate = False
+    ui.scene.clear()
+    ui.image = pixmap.toImage()
+    ui.pixmap = pixmap
+    ui.oldPixmap = ui.pixmap.copy()
+    ui.scene.setSceneRect(0, 0, ui.image.width(), ui.image.height())
+    ui.scene.addPixmap(ui.pixmap)
+    ui.initEditTool()
+
+
 def saveIMGFile(ui):
     if ui.image is not None:
         ui.editToolBarH.clear()
