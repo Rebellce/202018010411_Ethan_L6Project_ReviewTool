@@ -208,12 +208,12 @@ def deleteRecord():
             if os.path.exists(path):
                 os.remove(path)
         else:
-            textID = db.getTextRecord(recordId)
-            if textID:
-                textID = textID[0]['id']
+            textIDs = db.getTextRecord(recordId)
+            for textID in textIDs:
+                textID = textID['id']
                 if _type == 'Ai':
                     db.deleteDetection(textID)
-                db.deleteTextRecord(recordId)
+            db.deleteTextRecord(recordId)
         db.deleteRecord(recordId)
         return jsonify({'message': 'Record deleted successfully!'}), 200
     else:
@@ -256,6 +256,84 @@ def loadAIRecord(recordId):
                 detection = detection[0]
                 lst.append({'content': result['content'], 'proportion': detection['proportion']})
         return jsonify({'data': lst}), 200
+
+
+@app.route('/update/timestamp/<int:recordId>', methods=['GET'])
+def updateTimestamp(recordId):
+    if 'user' in session:
+        db.updateTimestamp(recordId)
+        return jsonify({'message': 'Timestamp updated successfully!'}), 200
+    else:
+        return jsonify({'message': 'User not logged in!'}), 400
+
+
+@app.route('/update/file', methods=['POST'])
+def updateFileRecord():
+    if 'user' in session:
+        try:
+            json = request.get_json()
+            recordId = json['recordId']
+            image = json['image']
+            imageBytes = base64.b64decode(image)
+            path = f"static/userUpload/{session['id']}/{recordId}.png"
+            with open(path, "wb") as file:
+                file.write(imageBytes)
+            db.updateTimestamp(recordId)
+        except Exception as e:
+            print(e)
+            return jsonify({'message': 'Error updating file!'}), 500
+
+        return jsonify({'message': 'File updated successfully!'}), 200
+    else:
+        return jsonify({'message': 'User not logged in!'}), 400
+
+
+@app.route('/update/ocr', methods=['POST'])
+def updateOCRRecord():
+    if 'user' in session:
+        try:
+            json = request.get_json()
+            recordId = json['recordId']
+            text = json['text']
+            db.updateTimestamp(recordId)
+            db.updateTextRecord(recordId, text)
+        except Exception as e:
+            print(e)
+            return jsonify({'message': 'Error updating file!'}), 500
+
+        return jsonify({'message': 'OCR updated successfully!'}), 200
+    else:
+        return jsonify({'message': 'User not logged in!'}), 400
+
+
+@app.route('/update/ai', methods=['POST'])
+def updateAIRecord():
+    if 'user' in session:
+        try:
+            json = request.get_json()
+            recordId = json['recordId']
+            dicts = json['dicts']
+            db.updateTimestamp(recordId)
+            textIDs = db.getTextRecord(recordId)
+            print(textIDs)
+            for textID in textIDs:
+                textID = textID['id']
+                db.deleteDetection(textID)
+            db.deleteTextRecord(recordId)
+            for dic in dicts:
+                textRecordId = db.addTextRecord((recordId, dic['content']))
+                if textRecordId is None:
+                    return jsonify({'message': 'Error updating file!'}), 500
+                detectionId = db.addDetection((textRecordId, dic['proportion']))
+                if detectionId is None:
+                    return jsonify({'message': 'Error updating file!'}), 500
+        except Exception as e:
+            print(e)
+            return jsonify({'message': 'Error updating file!'}), 500
+
+        return jsonify({'message': 'AI updated successfully!'}), 200
+    else:
+        return jsonify({'message': 'User not logged in!'}), 400
 
 
 if __name__ == '__main__':

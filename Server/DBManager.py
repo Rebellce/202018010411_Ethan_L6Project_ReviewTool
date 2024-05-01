@@ -83,7 +83,7 @@ def addRecord(data):
 
 
 def getRecords(userId):
-    query = "SELECT * FROM records WHERE user_id = %s"
+    query = "SELECT * FROM records WHERE user_id = %s ORDER BY timestamp DESC"
     result = executeQuery(query, (userId,), dictionary=True)
     return result
 
@@ -161,6 +161,30 @@ def getDetection(textId):
     query = "SELECT * FROM detection WHERE text_id = %s"
     result = executeQuery(query, (textId,), dictionary=True)
     return result
+
+
+def updateTimestamp(recordId):
+    query = "UPDATE records SET timestamp = now() WHERE id = %s"
+    executeQuery(query, (recordId,), operation="COMMIT")
+    return True
+
+
+def updateFileRecord(recordId, path):
+    query = "UPDATE file_record SET path = %s WHERE record_id = %s"
+    executeQuery(query, (path, recordId,), operation="COMMIT")
+    return True
+
+
+def updateTextRecord(recordId, content):
+    query = "UPDATE text_record SET content = %s WHERE record_id = %s"
+    executeQuery(query, (content, recordId,), operation="COMMIT")
+    return True
+
+
+def updateDetection(textId, proportion):
+    query = "UPDATE detection SET proportion = %s WHERE text_id = %s"
+    executeQuery(query, (proportion, textId,), operation="COMMIT")
+    return True
 
 
 if __name__ == '__main__':

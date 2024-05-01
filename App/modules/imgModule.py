@@ -44,7 +44,7 @@ def showEditTools(ui: ImageCropper):
     # Buttons
     toolEditLabel = QLabel("Save changes?")
     toolEditConfirmBtn = QToolButton()
-    toolEditConfirmBtn.clicked.connect(ui.undoEdit)
+    toolEditConfirmBtn.clicked.connect(ui.confirmEdit)
     toolEditConfirmBtn.setIcon(QIcon('../icons/check.png'))
 
     toolEditCancelBtn = QToolButton()
@@ -72,6 +72,10 @@ def undoEdit(ui: ImageCropper):
     ui.pixmap = ui.oldPixmap.copy()
     ui.scene.addPixmap(ui.pixmap)
     ui.scene.update()
+
+
+def confirmEdit(ui: ImageCropper):
+    ui.oldPixmap = ui.pixmap.copy()
 
 
 def zoomIn(ui):

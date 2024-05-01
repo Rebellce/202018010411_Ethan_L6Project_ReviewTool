@@ -116,6 +116,8 @@ def loadColor(text):
 
 
 class MyTabelWidget(QWidget):
+    rowSelected = pyqtSignal(int)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
@@ -171,6 +173,12 @@ class MyTabelWidget(QWidget):
                 self.rows[self.selectedRowIndex].deselectRow()
             self.rows[rowId].selectRow()
         self.selectedRowIndex = rowId
+        self.rowSelected.emit(rowId)
+
+    def deselect(self):
+        if self.selectedRowIndex != -1:
+            self.rows[self.selectedRowIndex].deselectRow()
+            self.selectedRowIndex = -1
 
 
 if __name__ == '__main__':

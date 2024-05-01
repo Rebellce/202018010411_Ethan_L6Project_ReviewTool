@@ -315,6 +315,93 @@ class UserModule:
             self.ui.getAiResult(message, statusCode)
         reply.deleteLater()
 
+    def updateTimestamp(self, recordId):
+        request = QNetworkRequest(QUrl(f"http://localhost:5000/update/timestamp/{recordId}"))
+        reply = self.manager.get(request)
+        reply.finished.connect(self.responseUpdateTimestamp)
+
+    def responseUpdateTimestamp(self):
+        reply = self.manager.sender()
+        statusCode = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+        if reply.error() == QNetworkReply.NoError:
+            response = json.loads(str(reply.readAll(), 'utf-8'))
+            message = response['message']
+            self.ui.updateTimestampResult(message, statusCode)
+        else:
+            print("Error:", reply.errorString())
+            if statusCode is None:
+                message = f"Something wrong.. (NoServerResponse)"
+            else:
+                message = f"Something wrong.. ({statusCode})"
+            self.ui.updateTimestampResult(message, statusCode)
+        reply.deleteLater()
+
+    def updateFileRecord(self, data):
+        request = QNetworkRequest(QUrl("http://localhost:5000/update/file"))
+        request.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
+        reply = self.manager.post(request, QByteArray(bytes(json.dumps(data), 'utf-8')))
+        reply.finished.connect(self.responseUpdateFileRecord)
+
+    def responseUpdateFileRecord(self):
+        reply = self.manager.sender()
+        statusCode = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+        if reply.error() == QNetworkReply.NoError:
+            response = json.loads(str(reply.readAll(), 'utf-8'))
+            message = response['message']
+            self.ui.SaveAsUpdateResult(message, statusCode)
+        else:
+            print("Error:", reply.errorString())
+            if statusCode is None:
+                message = f"Something wrong.. (NoServerResponse)"
+            else:
+                message = f"Something wrong.. ({statusCode})"
+            self.ui.SaveAsUpdateResult(message, statusCode)
+        reply.deleteLater()
+
+    def updateOCRRecord(self, data):
+        request = QNetworkRequest(QUrl("http://localhost:5000/update/ocr"))
+        request.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
+        reply = self.manager.post(request, QByteArray(bytes(json.dumps(data), 'utf-8')))
+        reply.finished.connect(self.responseUpdateOCRRecord)
+
+    def responseUpdateOCRRecord(self):
+        reply = self.manager.sender()
+        statusCode = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+        if reply.error() == QNetworkReply.NoError:
+            response = json.loads(str(reply.readAll(), 'utf-8'))
+            message = response['message']
+            self.ui.SaveAsUpdateResult(message, statusCode)
+        else:
+            print("Error:", reply.errorString())
+            if statusCode is None:
+                message = f"Something wrong.. (NoServerResponse)"
+            else:
+                message = f"Something wrong.. ({statusCode})"
+            self.ui.SaveAsUpdateResult(message, statusCode)
+        reply.deleteLater()
+
+    def updateAiRecord(self, data):
+        request = QNetworkRequest(QUrl("http://localhost:5000/update/ai"))
+        request.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
+        reply = self.manager.post(request, QByteArray(bytes(json.dumps(data), 'utf-8')))
+        reply.finished.connect(self.responseUpdateAiRecord)
+
+    def responseUpdateAiRecord(self):
+        reply = self.manager.sender()
+        statusCode = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+        if reply.error() == QNetworkReply.NoError:
+            response = json.loads(str(reply.readAll(), 'utf-8'))
+            message = response['message']
+            self.ui.SaveAsUpdateResult(message, statusCode)
+        else:
+            print("Error:", reply.errorString())
+            if statusCode is None:
+                message = f"Something wrong.. (NoServerResponse)"
+            else:
+                message = f"Something wrong.. ({statusCode})"
+            self.ui.SaveAsUpdateResult(message, statusCode)
+        reply.deleteLater()
+
 
 def getSha256(rawData):
     return hashlib.sha256(rawData.encode('utf-8')).hexdigest()

@@ -27,6 +27,7 @@ class ImageCropper(QMainWindow):
         self.userTempText = ""
         self.userTempType = ""
         self.userTempTime = None
+        self.userTempEvent = None
         self.scale = 1
         self.image = None
         self.painting = False
@@ -325,7 +326,8 @@ class ImageCropper(QMainWindow):
         self.userTabelComboBox.addItem("Canvas")
         self.userTabelComboBox.addItem("OCR Text")
         self.userTabelComboBox.addItem("AI Text")
-        # self.userTabelComboBox.currentIndexChanged.connect(self.userTabelRefresh)
+        self.userTempEvent = self.userTabelComboBox.mousePressEvent
+        self.userTabelComboBox.mousePressEvent = self.onComboBoxClicked
 
         saveButton = QToolButton(self)
         saveButton.setIcon(QIcon("../icons/cloud-upload.png"))
@@ -374,6 +376,7 @@ class ImageCropper(QMainWindow):
         tabelWidget = QWidget()
         tabelWidget.setLayout(tabelLayout)
         self.tableWidget = MyTabelWidget(self)
+        self.tableWidget.rowSelected.connect(self.onTableClicked)
         scrollArea = QScrollArea()
         tabelLayout.addWidget(scrollArea)
         scrollArea.setWidget(self.tableWidget)
@@ -549,8 +552,29 @@ class ImageCropper(QMainWindow):
             self.userWidget.show()
             self.tabUser.setDisabled(False)
 
+    def onTableClicked(self, row):
+        if row != -1:
+            _type = self.tableWidget.rows[row].type
+            if _type == "File":
+                self.userTabelComboBox.setCurrentIndex(0)
+            elif _type == "OCR":
+                self.userTabelComboBox.setCurrentIndex(1)
+            elif _type == "Ai":
+                self.userTabelComboBox.setCurrentIndex(2)
+            else:
+                assert False, "Unknown record type"
+
+    def onComboBoxClicked(self, event):
+        self.userTempEvent(event)
+        self.tableWidget.deselect()
+
     def userTabelToTop(self):
-        self.tableWidget.moveRowToTop()
+        row = self.tableWidget.selectedRowIndex
+        if row != -1:
+            recordId = self.tableWidget.rows[row].recordId
+            self.updateTimestamp(recordId)
+            self.tableWidget.moveRowToTop()
+            self.tableWidget.changeRowContent(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 2)
 
     def userTabelSave(self):
         self.tableTip.setText("")
@@ -571,7 +595,6 @@ class ImageCropper(QMainWindow):
                         self.user.insertFileRecord(data)
                     else:
                         self.tabUser.setDisabled(False)
-
                 else:
                     # user select a row
                     reply = QMessageBox.question(self, 'Save and Overwrite',
@@ -579,11 +602,18 @@ class ImageCropper(QMainWindow):
                                                  QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
                     if reply == QMessageBox.Yes:
-                        pass
+                        self.userTempTime = datetime.now()
+                        self.userTempType = "File"
+                        data = {
+                            "recordId": self.tableWidget.rows[selected].recordId,
+                            "image": convertPixmapToba64(self.pixmap)
+                        }
+                        self.user.updateFileRecord(data)
                     else:
                         self.tabUser.setDisabled(False)
             else:
                 self.tableTip.setText("No image on your canvas.")
+                self.tabUser.setDisabled(False)
         elif self.userTabelComboBox.currentText() == "OCR Text":
             if self.textEditOCRResult.toPlainText() != "":
                 if selected == -1:
@@ -597,6 +627,22 @@ class ImageCropper(QMainWindow):
                             "text": self.textEditOCRResult.toPlainText()
                         }
                         self.user.insertOCRRecord(data)
+                    else:
+                        self.tabUser.setDisabled(False)
+                else:
+                    # user select a row
+                    reply = QMessageBox.question(self, 'Save and Overwrite',
+                                                 "Are you sure to overwrite the record?",
+                                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+                    if reply == QMessageBox.Yes:
+                        self.userTempTime = datetime.now()
+                        self.userTempType = "OCR"
+                        data = {
+                            "recordId": self.tableWidget.rows[selected].recordId,
+                            "text": self.textEditOCRResult.toPlainText()
+                        }
+                        self.user.updateOCRRecord(data)
                     else:
                         self.tabUser.setDisabled(False)
             else:
@@ -617,8 +663,24 @@ class ImageCropper(QMainWindow):
                         self.user.insertAiRecord(data)
                     else:
                         self.tabUser.setDisabled(False)
+                else:
+                    # user select a row
+                    reply = QMessageBox.question(self, 'Save and Overwrite',
+                                                 "Are you sure to overwrite the record?",
+                                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+                    if reply == QMessageBox.Yes:
+                        self.userTempTime = datetime.now()
+                        self.userTempType = "Ai"
+                        data = {
+                            "recordId": self.tableWidget.rows[selected].recordId,
+                            "dicts": self.detector.data
+                        }
+                        self.user.updateAiRecord(data)
+                    else:
+                        self.tabUser.setDisabled(False)
             else:
-                self.tableTip.setText("Your AI text detector has no results.")
+                self.tableTip.setText("Your detector has no results.")
                 self.tabUser.setDisabled(False)
         else:
             assert False, "Unknown record type"
@@ -632,6 +694,15 @@ class ImageCropper(QMainWindow):
             _emoji = loadEmoji(_type)
 
             self.tableWidget.insertRow(_emoji, _text, _time, _type, color=_color, top=True, RID=result)
+        else:
+            self.tableTip.setText(result)
+        self.tabUser.setDisabled(False)
+
+    def SaveAsUpdateResult(self, result, statusCode):
+        if statusCode == 200:
+            _time = self.userTempTime.strftime("%Y-%m-%d %H:%M:%S")
+            self.tableWidget.changeRowContent(_time, 2)
+            QMessageBox.information(self, "Save Success", "Save success.", QMessageBox.Ok)
         else:
             self.tableTip.setText(result)
         self.tabUser.setDisabled(False)
@@ -668,9 +739,13 @@ class ImageCropper(QMainWindow):
         self.tabUser.setDisabled(False)
 
     def userTabelLoad(self):
+        self.tableTip.setText("")
+        self.tabUser.setDisabled(True)
         row = self.tableWidget.selectedRowIndex
         if row != -1:
             recordId = self.tableWidget.rows[row].recordId
+            self.updateTimestamp(recordId)
+            self.tableWidget.changeRowContent(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 2)
             _type = self.tableWidget.rows[row].type
             if _type == "File":
                 self.user.getImage(recordId)
@@ -683,6 +758,9 @@ class ImageCropper(QMainWindow):
                     self.tableTip.setText("Detection model unavailable")
             else:
                 assert False, "Unknown record type"
+        else:
+            self.tableTip.setText("No record selected.")
+            self.tabUser.setDisabled(False)
 
     def getImageResult(self, result, statusCode):
         if statusCode == 200:
@@ -718,6 +796,14 @@ class ImageCropper(QMainWindow):
             self.textEditAIText.setText(content)
             self.jumpToAITextTab(None)
         else:
+            self.tableTip.setText(result)
+        self.tabUser.setDisabled(False)
+
+    def updateTimestamp(self, recordId):
+        self.user.updateTimestamp(recordId)
+
+    def updateTimestampResult(self, result, statusCode):
+        if statusCode != 200:
             self.tableTip.setText(result)
         self.tabUser.setDisabled(False)
 
@@ -807,6 +893,9 @@ class ImageCropper(QMainWindow):
 
     def undoEdit(self):
         undoEdit(self)
+
+    def confirmEdit(self):
+        confirmEdit(self)
 
     #   ====================  Text Module Functions ====================
     def text(self):

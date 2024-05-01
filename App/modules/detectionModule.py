@@ -57,6 +57,7 @@ class Detector:
             paragraphs = text.split('\n')
             paragraphs = [para for para in paragraphs if para.strip() != '']
             results = []
+            self.data = []
             for para in paragraphs:
                 prob = self._detect(para)
                 self.data.append({'content': para, 'proportion': prob})
