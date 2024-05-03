@@ -358,7 +358,7 @@ def onShadowsChanged(ui, value, pixmap):
 
 
 def onHightlightsChanged(ui, value, pixmap):
-    ui.labelHightlights.setText('Hightlights: {}'.format(value))
+    ui.labelHightlights.setText('Highlights: {}'.format(value))
     if ui.image is not None and ui.initToolEditSwitch is False:
         ui.temperature = ()
         ui.contrast = ()

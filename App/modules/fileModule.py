@@ -46,6 +46,13 @@ def saveIMGFile(ui):
                                                    options=options)
         if file_name:
             ui.pixmap.save(file_name)
+            # 弹出保存成功
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("Save Success")
+            msg.setWindowTitle("Save")
+            msg.exec_()
+
 
 
 def openAvatarFile(ui):

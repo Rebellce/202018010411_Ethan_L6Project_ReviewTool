@@ -82,6 +82,7 @@ class ImageCropper(QMainWindow):
 
         # overview of the window
         self.setWindowTitle("Educational Assistant Tool")
+        self.setWindowIcon(QIcon('../icons/window.png'))
         self.centralWidget = QWidget()
         self.setCentralWidget(self.centralWidget)
 
@@ -1027,7 +1028,7 @@ class ImageCropper(QMainWindow):
         self.labelSharpness = QLabel("Sharpness: 0")
         self._tool(self.labelSharpness, 'sharpness')
         # Hightlights
-        self.labelHightlights = QLabel("Hightlights: 0")
+        self.labelHightlights = QLabel("Highlights: 0")
         self._tool(self.labelHightlights, 'highlights')
         # Shadows
         self.labelShadows = QLabel("Shadows: 0")
